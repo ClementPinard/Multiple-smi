@@ -7,8 +7,11 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py/4.304.04)
 ###Features
 - Allows you to get `nvidia-smi` output for multiple connected computers at once, and display it on a nice appindicator for Unity/Gnome users.
 
+![status](https://github.com/ClementPinard/nvidia-multiple-smi/blob/master/images/status%20bar.png)
+
 - Allows you to get a notification every time a new process is launched or finished. A minimum of 200MB memory use is needed for the notification to appear.
 
+![notif](https://github.com/ClementPinard/nvidia-multiple-smi/blob/master/images/Sans%20titre.png)
 
 
 ###installation:
