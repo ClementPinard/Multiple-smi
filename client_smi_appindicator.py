@@ -25,8 +25,11 @@ import cairo
 import os
 import time
 
+MIN_MEM_NOTIF = 200
+
 home = os.path.expanduser("~")
 config_folder = os.path.join(home,'.client_smi')
+
 if not os.path.exists(config_folder):
     os.makedirs(config_folder)
 file_path = os.path.join(config_folder,'hosts_to_smi.json')
@@ -121,18 +124,18 @@ def main():
     gtk.main()
 
 def update_processes_list(gpu,old,new):
-    MIN_MEM = 200
-    print(old)
-    print(new)
     for p in new.keys():
-        if (p not in old.keys()) and new[p]['used_memory'] > MIN_MEM:
+        if p not in old.keys() and new[p]['used_memory'] > MIN_MEM_NOTIF:
             new_job(gpu,new[p])
-            print('new:\t'+new[p])
+            print('new: ('+gpu['id']+')\t' + str(new[p]))
+            gpu['processes'][p] = new[p]
+        elif p in old.keys():
+            gpu['processes'][p] = new[p]
     for p in old.keys():
-        if (p not in new.keys()) and old[p]['used_memory'] > MIN_MEM:
+        if p not in new.keys() and old[p]['used_memory'] > MIN_MEM_NOTIF:
             finished_job(gpu,old[p])
-            print('finished:\t'+old[p])
-    gpu['processes'] = new
+            print('finished: ('+gpu['id']+')\t'+str(old[p]))
+            gpu['processes'].pop(p,None)
 
 def update_menu(gpu):
     gpu['status'].set_label(str(gpu['utilization']) + '% , ' + '%.2f' % (gpu['used_mem']) + ' GB')
