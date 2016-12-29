@@ -1,0 +1,11 @@
+[Unit]
+Description=Nvidia-smi server side
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/server_smi.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
