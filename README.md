@@ -13,6 +13,8 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py/4.304.04)
 
 ![notif](https://github.com/ClementPinard/nvidia-multiple-smi/blob/master/images/Sans%20titre.png)
 
+- This tool is aimed at small research teams, with multiple GPU-equipped computers, which you can manually ssh to. At a glance you can see every usage of your computer stock, and where you can launch your computation. It also provides some basis if you want to develop a tool to automatically launch your computation on the least busy computer of your network.
+
 
 ###installation:
 
