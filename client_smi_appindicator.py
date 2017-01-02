@@ -49,6 +49,8 @@ for h in hosts.keys():
         machine = {}
         machine['ip'] = hosts[h]['ip']
         machine['colors'] = hosts[h]['colors']
+        if "index" in hosts[h].keys():
+            machine["index"] = hosts[h]["index"]
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect((machine['ip'], 1111))
         s.send("smi")
@@ -60,11 +62,12 @@ for h in hosts.keys():
         machine['name'] = h
         machine['nGPUs'] = len(a['attached_gpus'])
         machine['GPUs'] = []
+        machine['host'] = h+'@'+machine['ip']
+
         for i in range(machine['nGPUs']):
             gpu_info = a['attached_gpus'][i]
             gpu = {}
             machine['GPUs'].append(gpu)
-            gpu['host'] = h+'@'+machine['ip']
             gpu['name'] = gpu_info['product_name']
             if machine['nGPUs'] > 1:
                 gpu['id'] = machine['name']+':'+str(i)
@@ -72,6 +75,9 @@ for h in hosts.keys():
                 gpu['id'] = machine['name']
             gpu['memory'] = gpu_info['total_memory']/1024
             gpu['processes'] = {}
+            gpu['utilization'] = gpu_info['utilization']['gpu']
+            gpu['used_mem'] = gpu_info['used_memory']/1024
+            gpu['processes'] = gpu_info['processes']
         machines.append(machine)
 
     except :
@@ -80,16 +86,17 @@ for h in hosts.keys():
 def main():
     indicators = {}
     for m in machines:
-
-        for i in range(m['nGPUs']):
-            gpu = m['GPUs'][i]
-            indicator_id = gpu['id']
-            indicator = appindicator.Indicator.new('smi_'+indicator_id, os.path.abspath('/usr/local/data/empty.png'), appindicator.IndicatorCategory.SYSTEM_SERVICES)
-            gpu['indicator'] = indicator
-            indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
-            build_menu(gpu)
-            indicator.set_menu(gpu['menu'])
-            indicator.set_label(indicator_id,'')
+        indicator_id = m['name']
+        if 'index' in m.keys():
+            index = str(m['index'])
+        else:
+            index= '0'
+        indicator = appindicator.Indicator.new('s'+index+'_'+indicator_id, os.path.abspath('/usr/local/data/empty.png'), appindicator.IndicatorCategory.SYSTEM_SERVICES)
+        m['indicator'] = indicator
+        indicator.set_status(appindicator.IndicatorStatus.ACTIVE)
+        build_menu(m)
+        indicator.set_menu(m['menu'])
+        indicator.set_label(indicator_id,'')
 
     notify.init('notifier')
 
@@ -97,26 +104,26 @@ def main():
 
     def smi():
         while True:
-            for m in machines:
-                s = m['socket']
-                s.send("smi")
+            try:
+                for m in machines:
+                    s = m['socket']
+                    s.send("smi")
 
-                r = s.recv(9999999)
-                try:
+                    r = s.recv(9999999)
                     a = json.loads(r)
                     if 'attached_gpus' in a.keys():
                         for i in range(m['nGPUs']):
-                            gpu_info = a['attached_gpus'][i]
+                            gpu_info = a['attached_gpus'][0]
                             gpu = m['GPUs'][i]
                             gpu['utilization'] = gpu_info['utilization']['gpu']
                             gpu['used_mem'] = gpu_info['used_memory']/1024
-                            update_menu(gpu)
-                            icon = draw_icon(gpu,m['colors'][0],m['colors'][1],gpu['utilization']/100,gpu['used_mem']/gpu['memory'])
-                            gpu['indicator'].set_icon(os.path.abspath(icon))
                             update_processes_list(gpu,gpu['processes'],gpu_info['processes'])
-                except:
-                    pass
- 
+                    update_menu(m)
+                    icon = draw_icon(m,m['colors'][0],m['colors'][1])
+                    m['indicator'].set_icon(os.path.abspath(icon))
+            except:
+                pass
+
     thread = threading.Thread(target=smi)
     thread.daemon = True
     thread.start()
@@ -137,41 +144,49 @@ def update_processes_list(gpu,old,new):
             print('finished: ('+gpu['id']+')\t'+str(old[p]))
             gpu['processes'].pop(p,None)
 
-def update_menu(gpu):
-    gpu['status'].set_label(str(gpu['utilization']) + '% , ' + '%.2f' % (gpu['used_mem']) + ' GB')
-    gpu['menu'].show_all()
+def update_menu(machine):
+    for gpu in machine['GPUs']:
+        time.sleep(0.01)
+        gpu['status'].set_label(str(gpu['utilization']) + '% , ' + '%.2f' % (gpu['used_mem']) + ' GB')
+    machine['menu'].show_all()
 
 
-def build_menu(gpu):
+def build_menu(machine):
     menu = gtk.Menu()
-    host_item = gtk.MenuItem(gpu['host'])
-    title_item = gtk.MenuItem(gpu['name'] + ', ' + '%.2f' % (gpu['memory']) + ' GB')
-    title_item.set_sensitive(False)
-    gpu['status'] = gtk.MenuItem('')
+    host_item = gtk.MenuItem(machine['host'])
     menu.append(host_item)
-    menu.append(title_item)
-    menu.append(gpu['status'])
+    for gpu in machine['GPUs']:
+        gpu['title'] = gtk.MenuItem(gpu['name'] + ', ' + '%.2f' % (gpu['memory']) + ' GB')
+        gpu['title'].set_sensitive(False)
+        gpu['status'] = gtk.MenuItem(str(gpu['utilization']) + '% , ' + '%.2f' % (gpu['used_mem']) + ' GB')
+        menu.append(gpu['title'])
+        menu.append(gpu['status'])
     menu.show_all()
-    gpu['menu'] = menu
+    machine['menu'] = menu
 
-def draw_icon(gpu,color1,color2,percentage1,percentage2):
-    '''Draws a graph with 2 columns 1 for each percentage (1 is fuill, 0 is empty)'''
+def draw_icon(machine,color1,color2):
+    '''Draws a graph with 2 columns 1 for each percentage (1 is full, 0 is empty)'''
     WIDTH, HEIGHT = 22, 22
+    if machine['nGPUs'] > 2:
+        WIDTH = 11*machine['nGPUs'] #if more than 1 GPU on a machine, each column is 11px wide (and not 22px)
     surface = cairo.ImageSurface (cairo.FORMAT_ARGB32, WIDTH, HEIGHT)
     ctx = cairo.Context (surface)
-    ctx.scale (WIDTH, HEIGHT) # Normalizing the canvas
+    ctx.scale (WIDTH/machine['nGPUs'], HEIGHT) # Normalizing the canvas coordinates go from (0,0) to (nGPUs,1)
 
-    ctx.rectangle (0, 1-percentage1, 0.5, 1) # Rectangle(x0, y0, x1, y1)
-    ctx.set_source_rgb(color1[0]/255,color1[1]/255,color1[2]/255)
-    ctx.fill ()
+    for i in range(machine['nGPUs']):
+        gpu = machine['GPUs'][i]
+        percentage1,percentage2 = gpu['utilization']/100,gpu['used_mem']/gpu['memory']
+        ctx.rectangle (i, 1-percentage1, 0.5, percentage1) # Rectangle(x0, y0, x1, y1)
+        ctx.set_source_rgb(color1[0]/255,color1[1]/255,color1[2]/255)
+        ctx.fill ()
 
-    ctx.rectangle (0.5, 1-percentage2, 1, 1) # Rectangle(x0, y0, x1, y1)
-    ctx.set_source_rgb(color2[0]/255,color2[1]/255,color2[2]/255)
-    ctx.fill ()
-    if 'i' not in gpu.keys():
-        gpu['i'] = 0
-    png_name = os.path.join(config_folder,gpu['id']+str(gpu['i'])+'.png')
-    gpu['i'] = (gpu['i']+1)%2
+        ctx.rectangle (i+0.5, 1-percentage2, 0.5, percentage2) # Rectangle(x0, y0, x1, y1)
+        ctx.set_source_rgb(color2[0]/255,color2[1]/255,color2[2]/255)
+        ctx.fill ()
+    if 'i' not in machine.keys():
+        machine['i'] = 0
+    png_name = os.path.join(config_folder,machine['name']+str(machine['i'])+'.png')
+    machine['i'] = (machine['i']+1)%2
 
     surface.write_to_png (png_name) # Output to PNG
 
@@ -180,10 +195,11 @@ def draw_icon(gpu,color1,color2,percentage1,percentage2):
 
 def new_job(gpu,job):
     notify.Notification.new("<b>New Job for "+gpu['id']+"</b>", job['process_name'] + '\n' + '%.2f' % (job['used_memory']/1024) + ' Go usage', None).show()
+    return
 
 def finished_job(gpu,job):
     notify.Notification.new("<b>Finished Job for "+gpu['id']+"</b>", job['process_name'] + '\n' + '%.2f' % (job['used_memory']/1024) + ' Go usage', None).show()    
-
+    return
 
 
 
