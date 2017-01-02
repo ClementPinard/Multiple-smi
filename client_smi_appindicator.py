@@ -104,11 +104,10 @@ def main():
 
     def smi():
         while True:
-            try:
-                for m in machines:
-                    s = m['socket']
+            for m in machines:
+                s = m['socket']
+                try:
                     s.send("smi")
-
                     r = s.recv(9999999)
                     a = json.loads(r)
                     if 'attached_gpus' in a.keys():
@@ -121,8 +120,8 @@ def main():
                     update_menu(m)
                     icon = draw_icon(m,m['colors'][0],m['colors'][1])
                     m['indicator'].set_icon(os.path.abspath(icon))
-            except:
-                pass
+                except:
+                    pass
 
     thread = threading.Thread(target=smi)
     thread.daemon = True
