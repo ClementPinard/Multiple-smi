@@ -1,10 +1,11 @@
-#Nvidia multiple smi
-###Python bindings for pyNVML library over network
+# Nvidia multiple smi
+
+### Python bindings for pyNVML library over network
 intended to work with python 2.7
 
 Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py/4.304.04)
 
-###Features
+### Features
 - Allows you to get `nvidia-smi` output for multiple connected computers at once, and display it on a nice appindicator for Unity/Gnome users.
 
 ![status](https://github.com/ClementPinard/nvidia-multiple-smi/blob/master/images/status%20bar.png)
@@ -16,11 +17,11 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py/4.304.04)
 - This tool is aimed at small research teams, with multiple GPU-equipped computers, which you can manually ssh to. At a glance you can see every usage of your computer stock, and where you can launch your computation. It also provides some basis if you want to develop a tool to automatically launch your computation on the least busy computer of your network.
 
 
-###installation:
+### installation:
 
 `sudo python setup.py install`
 
-####Server side services installation
+#### Server side services installation
 
 To allow clients to access your computer's smi stats, simply run
 `server_smi.py`
@@ -50,17 +51,17 @@ to uninstall:
 sudo update-rc.d -f service_smi_daemon.sh remove
 ```
 
-###to run the appindicator
+### to run the appindicator
 (gnome and unity environment only for the moment):
 
 `client_smi_appindicator.py`
 
-###to run the client_smi (CLI version):
+### to run the client_smi (CLI version):
 
 `client_smi.py`
 
 
-###Configuration:
+### Configuration:
 
 To add your own hosts, simply run a smi_client (CLI or gnome) once and add your entries in the json file that should be here:
 `~/.client_smi/hosts_to_smi.json`
