@@ -2,45 +2,42 @@
 # coding: utf-8 
 
 import socket
-import threading
+import select
 import my_smi
 import json
 import time
 
-class ClientThread(threading.Thread):
-
-    def __init__(self, ip, port, clientsocket):
-
-        threading.Thread.__init__(self)
-        self.ip = ip
-        self.port = port
-        self.clientsocket = clientsocket
-
-    def run(self): 
-        while True:
-            try:
-                time.sleep(1)
-                r = self.clientsocket.recv(9999999)
-                print(r)
-                
-                if 'break' in r:
-                    break
-                
-                smi = my_smi.DeviceQuery()
-                data_string = json.dumps(smi)
-                
-                self.clientsocket.send(data_string)
-
-            except Exception:
-                break
-            
+port = 26110  
 
 tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-tcpsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-tcpsock.bind(("",1111))
+tcpsock.bind(('',port))
+tcpsock.listen(5)
+clients = {}
 
 while True:
-    tcpsock.listen(10)
-    (clientsocket, (ip, port)) = tcpsock.accept()
-    newthread = ClientThread(ip, port, clientsocket)
-    newthread.start()
+    time.sleep(1)
+    connexions, wlist, xlist = select.select([tcpsock],
+        [], [], 0.05)
+    print(connexions)
+    
+    for connexion in connexions:
+        conn, infos = connexion.accept()
+        if infos[0] in clients.keys():
+            clients[infos[0]].close()
+        clients[infos[0]] = conn
+
+    print('clients: ' + str(clients))
+
+    clients_rlist = []
+    try:
+        clients_rlist, wlist, xlist = select.select(clients.values(),[], [], 0.05)
+    except select.error:
+        pass
+    else:
+        for client in clients_rlist:
+            msg = client.recv(1024)
+            print(msg)
+            if msg == 'smi':
+                smi = my_smi.DeviceQuery()
+                data_string = json.dumps(smi)
+                client.send(data_string)

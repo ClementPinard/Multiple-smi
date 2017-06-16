@@ -6,8 +6,6 @@ import signal
 import json
 import threading
 
-from urllib2 import Request, urlopen, URLError
-
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('AppIndicator3', '0.1')
@@ -26,7 +24,8 @@ import os
 import time
 
 MIN_MEM_NOTIF = 200
-
+port = 26110
+max_size = 10240 #10 ko
 home = os.path.expanduser("~")
 config_folder = os.path.join(home,'.client_smi')
 
@@ -51,11 +50,10 @@ for h in hosts.keys():
         machine['colors'] = hosts[h]['colors']
         if "index" in hosts[h].keys():
             machine["index"] = hosts[h]["index"]
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((machine['ip'], 1111))
+        s = socket.create_connection((machine['ip'], port))
         s.send("smi")
 
-        r = s.recv(9999999)
+        r = s.recv(max_size) #10ko max
         a = json.loads(r)
 
         machine['socket'] = s
@@ -80,7 +78,7 @@ for h in hosts.keys():
             gpu['processes'] = gpu_info['processes']
         machines.append(machine)
 
-    except :
+    except:
         pass
 
 def main():
@@ -104,11 +102,12 @@ def main():
 
     def smi():
         while True:
+            time.sleep(1)
             for m in machines:
                 s = m['socket']
                 try:
                     s.send("smi")
-                    r = s.recv(9999999)
+                    r = s.recv(max_size)
                     a = json.loads(r)
                     if 'attached_gpus' in a.keys():
                         for i in range(m['nGPUs']):
@@ -121,7 +120,7 @@ def main():
                     icon = draw_icon(m,m['colors'][0],m['colors'][1])
                     m['indicator'].set_icon(os.path.abspath(icon))
                 except:
-                    pass
+                    raise
 
     thread = threading.Thread(target=smi)
     thread.daemon = True

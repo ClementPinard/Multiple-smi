@@ -4,6 +4,8 @@ import json
 import sys
 import os
 
+port = 26110
+max_size = 10240 #10 ko
 home = os.path.expanduser("~")
 config_folder = os.path.join(home,'.client_smi')
 if not os.path.exists(config_folder):
@@ -27,10 +29,10 @@ for h in hosts.keys():
         machine['ip'] = hosts[h]['ip']
         machine['colors'] = hosts[h]['colors']
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((machine['ip'], 1111))
+        s = socket.create_connection((machine['ip'], port))
         s.send("smi")
 
-        r = s.recv(9999999)
+        r = s.recv(max_size)
         a = json.loads(r)
 
         machine['socket'] = s
@@ -60,7 +62,7 @@ while True:
             s = m['socket']
             s.send("smi")
         
-            r = s.recv(9999999)
+            r = s.recv(max_size)
             a = json.loads(r)
             for i in range(m['nGPUs']):
                 gpu = m['GPUs'][i]
