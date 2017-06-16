@@ -26,8 +26,6 @@ while True:
             clients[infos[0]].close()
         clients[infos[0]] = conn
 
-    print('clients: ' + str(clients))
-
     clients_rlist = []
     try:
         clients_rlist, wlist, xlist = select.select(clients.values(),[], [], 0.05)
@@ -36,7 +34,6 @@ while True:
     else:
         for client in clients_rlist:
             msg = client.recv(1024)
-            print(msg)
             if msg == 'smi':
                 smi = my_smi.DeviceQuery()
                 data_string = json.dumps(smi)
