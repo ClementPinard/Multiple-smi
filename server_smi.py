@@ -10,7 +10,7 @@ from collections import deque
 import csv
 import os
 
-STORE_HISTORY = False
+STORE_HISTORY = True
 port = 26110
 
 if STORE_HISTORY:
