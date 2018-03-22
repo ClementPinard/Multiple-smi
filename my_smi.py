@@ -3,7 +3,7 @@
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #    * Redistributions of source code must retain the above copyright notice,
 #      this list of conditions and the following disclaimer.
 #    * Redistributions in binary form must reproduce the above copyright
@@ -18,21 +18,23 @@
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
 # ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
 # LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
 # INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF 
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
 # THE POSSIBILITY OF SUCH DAMAGE.
 #####
 
 
 from pynvml import *
 import datetime
-        
+
 #
 # Converts errors into string messages
 #
+
+
 def handleError(err):
     if (err.value == NVML_ERROR_NOT_SUPPORTED):
         return "N/A"
@@ -40,6 +42,8 @@ def handleError(err):
         return err.__str__()
 
 #######
+
+
 def DeviceQuery():
     result = {}
     try:
@@ -47,51 +51,50 @@ def DeviceQuery():
         # Initialize NVML
         #
         nvmlInit()
-        
 
         result['timestamp'] = str(datetime.date.today())
-        result['driver_version'] = nvmlSystemGetDriverVersion()
+        result['driver_version'] = nvmlSystemGetDriverVersion().decode('utf-8')
 
         deviceCount = nvmlDeviceGetCount()
         result['attached_gpus']  = []
 
         for i in range(0, deviceCount):
             handle = nvmlDeviceGetHandleByIndex(i)
-            
-            pciInfo = nvmlDeviceGetPciInfo(handle)    
+
+            pciInfo = nvmlDeviceGetPciInfo(handle)
             tempres = {}
             result['attached_gpus'].append(tempres)
             tempres['id'] = i
-            tempres['PCI bus id'] = pciInfo.busId
-            
-            tempres['product_name'] = nvmlDeviceGetName(handle)
-            
+            tempres['PCI bus id'] = pciInfo.busId.decode('utf-8')
+
+            tempres['product_name'] = nvmlDeviceGetName(handle).decode('utf-8')
+
             try:
                 uuid = nvmlDeviceGetUUID(handle)
             except NVMLError as err:
                 uuid = handleError(err)
 
-            tempres['uuid']= uuid
-            
+            tempres['uuid'] = uuid.decode('utf-8')
+
             try:
-                vbios = nvmlDeviceGetVbiosVersion(handle)
+                vbios = nvmlDeviceGetVbiosVersion(handle).decode('utf-8')
             except NVMLError as err:
                 vbios = handleError(err)
 
             tempres['vbios_version'] = vbios
-            
+
             pci = {}
             tempres['pci'] = pci
             pci['bus'] = pciInfo.bus
             pci['device'] = pciInfo.device
             pci['domain'] = pciInfo.domain
             pci['device_id'] = pciInfo.pciDeviceId
-            pci['bus_id'] = pciInfo.busId
+            pci['bus_id'] = pciInfo.busId.decode('utf-8')
             pci['sub_system_id'] = pciInfo.pciSubSystemId
-            
+
             linkInfo = {}
             pci['link_info'] = linkInfo
-            
+
             try:
                 gen = nvmlDeviceGetMaxPcieLinkGeneration(handle)
             except NVMLError as err:
@@ -111,7 +114,7 @@ def DeviceQuery():
             except NVMLError as err:
                 width = handleError(err)
 
-            linkInfo['max_link_width'] =width
+            linkInfo['max_link_width'] = width
 
             try:
                 width = nvmlDeviceGetCurrPcieLinkWidth(handle)
@@ -119,7 +122,7 @@ def DeviceQuery():
                 width = handleError(err)
 
             linkInfo['current_link_width'] = width
-            
+
             try:
                 fan = nvmlDeviceGetFanSpeed(handle)
             except NVMLError as err:
@@ -148,7 +151,6 @@ def DeviceQuery():
             tempres['used_memory'] = mem_used
             tempres['free_memory'] = mem_free
 
-            
             try:
                 mode = nvmlDeviceGetComputeMode(handle)
                 if mode == NVML_COMPUTEMODE_DEFAULT:
@@ -176,17 +178,17 @@ def DeviceQuery():
                 mem_util = error
             utilization = {}
             tempres['utilization'] = utilization
-            
+
             utilization['gpu'] = gpu_util
             utilization['mem'] = mem_util
-                        
+
             try:
                 temp = nvmlDeviceGetTemperature(handle, NVML_TEMPERATURE_GPU)
             except NVMLError as err:
                 temp = handleError(err)
 
             tempres['temperature'] = temp
-            
+
             try:
                 graphics = nvmlDeviceGetClockInfo(handle, NVML_CLOCK_GRAPHICS)
             except NVMLError as err:
@@ -196,22 +198,22 @@ def DeviceQuery():
                 sm = nvmlDeviceGetClockInfo(handle, NVML_CLOCK_SM)
             except NVMLError as err:
                 sm = handleError(err)
-                
+
             tempres['sm_clock'] = sm
             try:
                 mem = nvmlDeviceGetClockInfo(handle, NVML_CLOCK_MEM)
             except NVMLError as err:
                 mem = handleError(err)
-                
+
             tempres['mem_clock'] = mem
-            
+
             try:
                 graphics = nvmlDeviceGetMaxClockInfo(handle, NVML_CLOCK_GRAPHICS)
             except NVMLError as err:
                 graphics = handleError(err)
-                
-            tempres['graphics_max_clock'] =  graphics
-            
+
+            tempres['graphics_max_clock'] = graphics
+
             try:
                 sm = nvmlDeviceGetMaxClockInfo(handle, NVML_CLOCK_SM)
             except NVMLError as err:
@@ -221,41 +223,41 @@ def DeviceQuery():
                 mem = nvmlDeviceGetMaxClockInfo(handle, NVML_CLOCK_MEM)
             except NVMLError as err:
                 mem = handleError(err)
-                
+
             tempres['mem_max_clock'] = mem
             gpu_procs = {}
             tempres['processes'] = gpu_procs
             try:
                 procs = nvmlDeviceGetComputeRunningProcesses(handle)
-                
+                graphics = nvmlDeviceGetGraphicsRunningProcesses(handle)
 
-                for p in procs:
+                for p in procs+graphics:
                     try:
-                        name = str(nvmlSystemGetProcessName(p.pid))
+                        # discard the options used for the process to avoid a long string
+                        name = nvmlSystemGetProcessName(p.pid).decode('utf-8').split(' ')[0]
                     except NVMLError as err:
                         if (err.value == NVML_ERROR_NOT_FOUND):
                             # probably went away
                             continue
                         else:
                             name = handleError(err)
-                    
+
                     gpu_procs[p.pid] = {}
-                    
+
                     gpu_procs[p.pid]['process_name'] = name
 
-                    if (p.usedGpuMemory == None):
+                    if (p.usedGpuMemory is None):
                         mem = 'N\A'
                     else:
                         mem = (p.usedGpuMemory / 1024 / 1024)
                     gpu_procs[p.pid]['used_memory'] = mem
-                    
+
             except NVMLError as err:
                 pass
-        
+
     except NVMLError as err:
         pass
-    
-    nvmlShutdown()
-    
-    return result
 
+    nvmlShutdown()
+
+    return result
