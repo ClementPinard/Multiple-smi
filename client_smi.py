@@ -3,9 +3,15 @@ import socket
 import json
 import sys
 import os
+import argparse
 
-port = 26110
-max_size = 10240 #10 ko
+parser = argparse.ArgumentParser(description='Client for for nvidia multiple smi',
+                                 formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+parser.add_argument('--port', '-p', default=26110, help='port to communicate with, make sure it\'s the same as server_smi scripts')
+parser.add_argument('--refresh-rate', '-r', default=10, help='loop rate at which it will check again for connected machines')
+parser.add_argument('--max-size', '-m', default=10240, help='max json size')
+
 home = os.path.expanduser("~")
 config_folder = os.path.join(home,'.client_smi')
 if not os.path.exists(config_folder):
@@ -20,58 +26,66 @@ else:
     with open(file_path,'w') as f:
         json.dump(hosts,f,indent=2)
 
-machines = []
 
-for h in hosts.keys():
-    try:
+def update_online_machines(args, hosts, online_machines):
+    new_online_machines = []
+    for name, machine in hosts.items():
+        if name in online_machines:
+            continue
+        try:
+            s = socket.create_connection((machine['ip'], args.port))
+            s.send(b'smi')
 
-        machine = {}
-        machine['ip'] = hosts[h]['ip']
-        machine['colors'] = hosts[h]['colors']
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s = socket.create_connection((machine['ip'], port))
-        s.send("smi")
-
-        r = s.recv(max_size)
-        a = json.loads(r)
-
-        machine['socket'] = s
-        machine['name'] = h
-        machine['nGPUs'] = len(a['attached_gpus'])
-        machine['GPUs'] = []
-        for i in range(machine['nGPUs']):
-            gpu_info = a['attached_gpus'][i]
-            gpu = {}
-            machine['GPUs'].append(gpu)
-            gpu['host'] = h+'@'+machine['ip']
-            gpu['name'] = gpu_info['product_name']
-            if machine['nGPUs'] > 1:
-                gpu['id'] = machine['name']+':'+str(i)
-            else:
-                gpu['id'] = machine['name']
-            gpu['memory'] = gpu_info['total_memory']/1024
-            gpu['processes'] = {}
-        machines.append(machine)
-    
-    except :
-        pass
-
-while True:
-    try:
-        for m in machines:
-            s = m['socket']
-            s.send("smi")
-        
-            r = s.recv(max_size)
+            r = s.recv(args.max_size).decode('utf-8')  # 10ko max
             a = json.loads(r)
-            for i in range(m['nGPUs']):
-                gpu = m['GPUs'][i]
-                gpu_info = a['attached_gpus'][i]
-                print(gpu['id'])
-                print('gpu: '+str(gpu_info['utilization']['gpu'])+' mem: '+str(100*gpu_info["used_memory"]/(1024*gpu['memory'])) )
-            with open(os.path.join(config_folder,'client_'+m['name']+'.json'),'wb') as f:
-                json.dump(a,f,indent=2)
-            
-    except KeyboardInterrupt:
-        sys.exit()
 
+        except Exception as e:
+            continue
+
+        else:
+            machine['socket'] = s
+            machine['nGPUs'] = len(a['attached_gpus'])
+            machine['GPUs'] = []
+
+            for i, gpu_info in enumerate(a['attached_gpus']):
+                gpu = {}
+                machine['GPUs'].append(gpu)
+                gpu['name'] = gpu_info['product_name']
+                if machine['nGPUs'] > 1:
+                    gpu['id'] = gpu['name'] + ':' + str(i)
+                else:
+                    gpu['id'] = gpu['name']
+                gpu['memory'] = gpu_info['total_memory']/1024
+                gpu['utilization'] = gpu_info['utilization']['gpu']
+                gpu['used_mem'] = gpu_info['used_memory']/1024
+                gpu['processes'] = gpu_info['processes']
+            new_online_machines.append(name)
+    return(new_online_machines, online_machines + new_online_machines)
+
+
+if __name__ == '__main__':
+    args = parser.parse_args()
+    ticks = 0
+    online_machines = []
+    while True:
+        try:
+            if ticks == 0:
+                _, online_machines = update_online_machines(args, hosts, online_machines)
+            ticks = (ticks + 1) % args.refresh_rate
+            for name,m in hosts.items():
+                if name in online_machines:
+                    s = m['socket']
+                    s.send('smi'.encode())
+
+                    r = s.recv(args.max_size).decode('utf-8')
+                    a = json.loads(r)
+                    for i in range(m['nGPUs']):
+                        gpu = m['GPUs'][i]
+                        gpu_info = a['attached_gpus'][i]
+                        print(gpu['id'])
+                        print('gpu: '+str(gpu_info['utilization']['gpu'])+' mem: '+str(100*gpu_info["used_memory"]/(1024*gpu['memory'])) )
+                    with open(os.path.join(config_folder,'client_'+name+'.json'),'w') as f:
+                        json.dump(a,f,indent=2)
+
+        except KeyboardInterrupt:
+            sys.exit()
