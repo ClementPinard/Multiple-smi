@@ -13,11 +13,13 @@ import os
 STORE_HISTORY = True
 port = 26110
 
+
 if STORE_HISTORY:
     first_smi = my_smi.DeviceQuery()
 
-    home = os.path.expanduser("~")
-    server_folder = os.path.join(home,'.server_smi')
+    # root = os.path.expanduser("~")
+    root = '/etc/'
+    server_folder = os.path.join(root,'server_smi')
     history_file = os.path.join(server_folder,'history.csv')
 
     ticks = 0
