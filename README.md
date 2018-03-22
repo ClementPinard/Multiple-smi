@@ -1,9 +1,9 @@
 # Nvidia multiple smi
 
 ### Python bindings for pyNVML library over network
-intended to work with python 2.7
+intended to work with python 3+
 
-Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py/4.304.04)
+Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3)
 
 ### Features
 - Allows you to get `nvidia-smi` output for multiple connected computers at once, and display it on a nice appindicator for Unity/Gnome users.
@@ -19,7 +19,7 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py/4.304.04)
 
 ### installation:
 
-`sudo python setup.py install`
+`sudo python3 setup.py install`
 
 #### Server side services installation
 
@@ -67,3 +67,9 @@ To add your own hosts, simply run a smi_client (CLI or gnome) once and add your 
 `~/.client_smi/hosts_to_smi.json`
 
 Default ones are ml1 and ml2 with associated colors
+
+### Gpu usage stats:
+
+Server-side, gpu usage history is stored in `~/.server_smi/history.csv` ,  usage is written on it every ~30 sec, feel free to make some data science with it.
+
+To disable it, you can comment Line before installing
