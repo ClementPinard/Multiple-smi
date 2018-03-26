@@ -70,6 +70,6 @@ Default ones are ml1 and ml2 with associated colors
 
 ### Gpu usage stats:
 
-Server-side, gpu usage history is stored in `~/.server_smi/history.csv` ,  usage is written on it every ~30 sec, feel free to make some data science with it.
+Server-side, gpu usage history is stored in `~/.server_smi/history.csv` if launched from CLI, `/etc/server_smi/history.csv` if launched from systemctl/init.d.  Usage is written on it every ~60 sec, feel free to make some data science with it.
 
-To disable it, you can comment Line before installing
+To disable it, you can remove option `-s` in server_smi.service (line 7) or server_smi_daemon.sh (line 6) before installing
