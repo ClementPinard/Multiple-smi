@@ -4,7 +4,7 @@ After=multi-user.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/server_smi.py
+ExecStart=/usr/local/bin/server_smi.py -s --hp /etc/service_smi/history.csv
 Restart=always
 
 [Install]

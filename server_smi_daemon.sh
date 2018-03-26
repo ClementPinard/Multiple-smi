@@ -3,7 +3,7 @@
 #Use it only for Ubuntu 14 ! for Ubuntu 15+, use service
 
 DAEMON="/usr/local/bin/server_smi.py" #ligne de commande du programme, attention à l'extension .py.
-daemon_OPT=""  #argument à utiliser par le programme
+daemon_OPT="-s --hp /etc/service_smi/history.csv"  #argument à utiliser par le programme
 daemon_NAME="server_smi.py" #Nom du programme (doit être identique à l'exécutable).
  
 PATH="/sbin:/bin:/usr/sbin:/usr/bin" #Ne pas toucher
