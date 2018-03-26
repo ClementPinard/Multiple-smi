@@ -20,9 +20,7 @@ from gi.repository import Notify as notify
 from gi.repository import GObject
 from gi.repository import GLib
 
-
-MIN_MEM_NOTIF = 200
-home = os.path.expanduser("~")
+client_smi.parser.add_argument('--min-mem-notif', '-n', default=200, help='min memory usage to trigger Notification')
 config_folder = client_smi.config_folder
 hosts = client_smi.hosts
 
@@ -68,7 +66,7 @@ def main():
                                 gpu = machine['GPUs'][i]
                                 gpu['utilization'] = gpu_info['utilization']['gpu']
                                 gpu['used_mem'] = gpu_info['used_memory']/1024
-                                update_processes_list(gpu,gpu['processes'],gpu_info['processes'])
+                                update_processes_list(gpu,gpu['processes'],gpu_info['processes'],args.min_mem_notif)
                         GLib.idle_add(update_menu, machine)
                         icon = draw_icon(name, machine)
                         GLib.idle_add(machine['indicator'].set_icon, os.path.abspath(icon))
@@ -79,16 +77,16 @@ def main():
     gtk.main()
 
 
-def update_processes_list(gpu,old,new):
+def update_processes_list(gpu,old,new,mem_threshold):
     for p in new.keys():
-        if p not in old.keys() and new[p]['used_memory'] > MIN_MEM_NOTIF:
+        if p not in old.keys() and new[p]['used_memory'] > mem_threshold:
             new_job(gpu,new[p])
             print('new: ('+gpu['id']+')\t' + str(new[p]))
             gpu['processes'][p] = new[p]
         elif p in old.keys():
             gpu['processes'][p] = new[p]
     for p in list(old.keys()):
-        if p not in new.keys() and old[p]['used_memory'] > MIN_MEM_NOTIF:
+        if p not in new.keys() and old[p]['used_memory'] > mem_threshold:
             finished_job(gpu,old[p])
             print('finished: ('+gpu['id']+')\t'+str(old[p]))
             gpu['processes'].pop(p,None)
