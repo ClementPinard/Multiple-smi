@@ -52,7 +52,7 @@ def update_online_machines(args, hosts, online_machines):
                 machine['GPUs'].append(gpu)
                 gpu['name'] = gpu_info['product_name']
                 if machine['nGPUs'] > 1:
-                    gpu['id'] = gpu['name'] + ':' + str(i)
+                    gpu['id'] = "{}:{}".format(gpu['name'], i)
                 else:
                     gpu['id'] = gpu['name']
                 gpu['memory'] = gpu_info['total_memory']/1024
@@ -83,7 +83,7 @@ if __name__ == '__main__':
                         gpu = m['GPUs'][i]
                         gpu_info = a['attached_gpus'][i]
                         print(gpu['id'])
-                        print('gpu: '+str(gpu_info['utilization']['gpu'])+' mem: '+str(100*gpu_info["used_memory"]/(1024*gpu['memory'])) )
+                        print('gpu: {} % mem: {:.2f} %'.format(gpu_info['utilization']['gpu'], 100*gpu_info["used_memory"]/(1024*gpu['memory'])))
                     with open(os.path.join(config_folder,'client_'+name+'.json'),'w') as f:
                         json.dump(a,f,indent=2)
 

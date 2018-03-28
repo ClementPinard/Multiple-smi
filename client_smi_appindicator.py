@@ -66,7 +66,7 @@ def main():
                                 gpu = machine['GPUs'][i]
                                 gpu['utilization'] = gpu_info['utilization']['gpu']
                                 gpu['used_mem'] = gpu_info['used_memory']/1024
-                                update_processes_list(gpu,gpu['processes'],gpu_info['processes'],args.min_mem_notif)
+                                update_processes_list(name, gpu, gpu_info['processes'], args.min_mem_notif)
                         GLib.idle_add(update_menu, machine)
                         icon = draw_icon(name, machine)
                         GLib.idle_add(machine['indicator'].set_icon, os.path.abspath(icon))
@@ -77,36 +77,37 @@ def main():
     gtk.main()
 
 
-def update_processes_list(gpu,old,new,mem_threshold):
+def update_processes_list(machine_name, gpu, new, mem_threshold):
+    old = gpu['processes']
     for p in new.keys():
         if p not in old.keys() and new[p]['used_memory'] > mem_threshold:
-            new_job(gpu,new[p])
-            print('new: ('+gpu['id']+')\t' + str(new[p]))
+            new_job(machine_name,gpu,new[p])
+            print('new: ({})\t{}'.format(gpu['id'],new[p]))
             gpu['processes'][p] = new[p]
         elif p in old.keys():
             gpu['processes'][p] = new[p]
     for p in list(old.keys()):
         if p not in new.keys() and old[p]['used_memory'] > mem_threshold:
-            finished_job(gpu,old[p])
-            print('finished: ('+gpu['id']+')\t'+str(old[p]))
+            finished_job(machine_name,gpu,old[p])
+            print('finished: ({})\t{}'.format(gpu['id'], old[p]))
             gpu['processes'].pop(p,None)
 
 
 def update_menu(machine):
     for gpu in machine['GPUs']:
         time.sleep(0.1)
-        gpu['status'].set_label(str(gpu['utilization']) + '% , ' + '%.2f' % (gpu['used_mem']) + ' GB')
+        gpu['status'].set_label("{}% , {:,.2f} GB".format(gpu['utilization'], gpu['used_mem']))
     machine['menu'].show_all()
 
 
 def build_menu(machine_name, machine):
     menu = gtk.Menu()
-    host_item = gtk.MenuItem(machine_name + '@' + machine['ip'])
+    host_item = gtk.MenuItem("{}@{}".format(machine_name, machine['ip']))
     menu.append(host_item)
     for gpu in machine['GPUs']:
-        gpu['title'] = gtk.MenuItem(gpu['name'] + ', ' + '%.2f' % (gpu['memory']) + ' GB')
+        gpu['title'] = gtk.MenuItem("{}, {:.2f} GB".format(gpu['name'], gpu['memory']))
         gpu['title'].set_sensitive(False)
-        gpu['status'] = gtk.MenuItem(str(gpu['utilization']) + '% , ' + '%.2f' % (gpu['used_mem']) + ' GB')
+        gpu['status'] = gtk.MenuItem("{}% , {:.2f} GB".format(gpu['utilization'], gpu['used_mem']))
         menu.append(gpu['title'])
         menu.append(gpu['status'])
     menu.show_all()
@@ -135,25 +136,25 @@ def draw_icon(machine_name, machine):
         ctx.fill()
     if 'i' not in machine.keys():
         machine['i'] = 0
-    png_name = os.path.join(config_folder,machine_name+str(machine['i'])+'.png')
+    png_name = os.path.join(config_folder,"{}{}.png".format(machine_name, machine['i']))
     machine['i'] = (machine['i']+1) % 2
 
     surface.write_to_png(png_name)  # Output to PNG
     return(png_name)
 
 
-def new_job(gpu,job):
+def new_job(machine_name, gpu, job):
     notify.Notification.new(
-        "<b>New Job for "+gpu['id']+"</b>",
-        job['process_name'] + '\n' + '%.2f' % (job['used_memory']/1024) + ' Go usage',
+        "New Job for {}".format(machine_name),
+        "{}\n{}\n{:.2f} Go usage".format(gpu['id'],job['process_name'],job['used_memory']/1024),
         None).show()
     return
 
 
-def finished_job(gpu,job):
+def finished_job(machine_name, gpu, job):
     notify.Notification.new(
-        "<b>Finished Job for "+gpu['id']+"</b>",
-        job['process_name'] + '\n' + '%.2f' % (job['used_memory']/1024) + ' Go usage',
+        "Finished Job for {}".format(machine_name),
+        "{}\n{}\n{:.2f} Go usage".format(gpu['id'],job['process_name'],job['used_memory']/1024),
         None).show()
     return
 
@@ -167,7 +168,7 @@ def notify_new_machines(machine_names, hosts):
 
     if len(machine_names) == 1:
         notify.Notification.new(
-            "<b>"+machine_names[0]+" Connected</b>",
+            "{} Connected".format(machine_names[0]),
             hosts[machine_names[0]]['ip'],
             None).show()
     elif len(machine_names) > 1:
@@ -181,7 +182,7 @@ def notify_new_machines(machine_names, hosts):
 def lost_machine(machine_name, machine):
     machine['indicator'].set_status(appindicator.IndicatorStatus.PASSIVE)
     notify.Notification.new(
-        "<b>"+machine_name+" Disconnected</b>",
+        "{} Disconnected".format(machine_name),
         machine['ip'],
         None).show()
     return
