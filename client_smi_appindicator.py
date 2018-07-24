@@ -21,12 +21,11 @@ from gi.repository import GObject
 from gi.repository import GLib
 
 client_smi.parser.add_argument('--min-mem-notif', '-n', default=200, help='min memory usage to trigger Notification')
-config_folder = client_smi.config_folder
-hosts = client_smi.hosts
 
 
 def main():
     args = client_smi.parser.parse_args()
+    hosts, config_folder = client_smi.get_hosts()
     for name, machine in hosts.items():
         if 'index' in machine.keys():
             index = str(machine['index'])

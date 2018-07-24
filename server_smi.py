@@ -83,7 +83,6 @@ def main():
         connexions, wlist, xlist = select.select(
             [tcpsock],
             [], [], 0.05)
-        print(connexions)
 
         for connexion in connexions:
             conn, infos = connexion.accept()
@@ -98,10 +97,14 @@ def main():
             pass
         else:
             for client in clients_rlist:
-                msg = client.recv(1024).decode('utf-8')
-                if msg == 'smi':
-                    data_string = json.dumps(smi)
-                    client.send(data_string.encode())
+                msg = client.recv(1024)
+                try:
+                    msg = msg.decode('utf-8')
+                    if msg == 'smi':
+                        data_string = json.dumps(smi)
+                        client.send(data_string.encode())
+                except Exception as e:
+                    pass
 
 
 if __name__ == '__main__':

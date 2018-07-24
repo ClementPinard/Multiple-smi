@@ -11,20 +11,24 @@ parser = argparse.ArgumentParser(description='Client for for nvidia multiple smi
 parser.add_argument('--port', '-p', default=26110, help='port to communicate with, make sure it\'s the same as server_smi scripts')
 parser.add_argument('--refresh-rate', '-r', default=10, help='loop rate at which it will check again for connected machines')
 parser.add_argument('--max-size', '-m', default=10240, help='max json size')
+parser.add_argument('--timeout', '-t', default=0.1, help='timeout for servers response. useful when blocked by a firewall')
 
-home = os.path.expanduser("~")
-config_folder = os.path.join(home,'.client_smi')
-if not os.path.exists(config_folder):
-    os.makedirs(config_folder)
-file_path = os.path.join(config_folder,'hosts_to_smi.json')
-if(os.path.exists(file_path)):
-    with open(file_path) as f:
-        hosts = json.load(f)
-else:
-    with open('/usr/local/data/hosts_to_smi.json') as f:
-        hosts = json.load(f)
-    with open(file_path,'w') as f:
-        json.dump(hosts,f,indent=2)
+
+def get_hosts():
+    home = os.path.expanduser("~")
+    config_folder = os.path.join(home,'.client_smi')
+    if not os.path.exists(config_folder):
+        os.makedirs(config_folder)
+    file_path = os.path.join(config_folder,'hosts_to_smi.json')
+    if(os.path.exists(file_path)):
+        with open(file_path) as f:
+            hosts = json.load(f)
+    else:
+        with open('/usr/local/data/hosts_to_smi.json') as f:
+            hosts = json.load(f)
+        with open(file_path,'w') as f:
+            json.dump(hosts,f,indent=2)
+    return hosts, config_folder
 
 
 def update_online_machines(args, hosts, online_machines):
@@ -65,6 +69,7 @@ def update_online_machines(args, hosts, online_machines):
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    hosts, config_folder = get_hosts()
     ticks = 0
     online_machines = []
     while True:
