@@ -67,7 +67,7 @@ def main():
                                 gpu['used_mem'] = gpu_info['used_memory']/1024
                                 update_processes_list(name, gpu, gpu_info['processes'], args.min_mem_notif)
                         GLib.idle_add(update_menu, machine)
-                        icon = draw_icon(name, machine)
+                        icon = draw_icon(name, machine, config_folder)
                         GLib.idle_add(machine['indicator'].set_icon, os.path.abspath(icon))
 
     thread = threading.Thread(target=smi)
@@ -113,7 +113,7 @@ def build_menu(machine_name, machine):
     return menu
 
 
-def draw_icon(machine_name, machine):
+def draw_icon(machine_name, machine, config_folder):
     '''Draws a graph with 2 columns 1 for each percentage (1 is full, 0 is empty)'''
     color1, color2 = machine['colors']
     WIDTH, HEIGHT = 22, 22
