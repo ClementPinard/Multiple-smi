@@ -65,7 +65,7 @@ def main():
                                 gpu = machine['GPUs'][i]
                                 gpu['utilization'] = gpu_info['utilization']['gpu']
                                 gpu['used_mem'] = gpu_info['used_memory']/1024
-                                update_processes_list(name, gpu, gpu_info['processes'], args.min_mem_notif)
+                                update_processes_list(name, gpu, gpu_info['processes'], args.min_mem_notif, args.verbose)
                         GLib.idle_add(update_menu, machine)
                         icon = draw_icon(name, machine, config_folder)
                         GLib.idle_add(machine['indicator'].set_icon, os.path.abspath(icon))
@@ -76,19 +76,21 @@ def main():
     gtk.main()
 
 
-def update_processes_list(machine_name, gpu, new, mem_threshold):
+def update_processes_list(machine_name, gpu, new, mem_threshold, verbose):
     old = gpu['processes']
     for p in new.keys():
         if p not in old.keys() and new[p]['used_memory'] > mem_threshold:
             new_job(machine_name,gpu,new[p])
-            print('new: ({})\t{}'.format(gpu['id'],new[p]))
+            if verbose:
+                print('new: ({})\t{}'.format(gpu['id'],new[p]))
             gpu['processes'][p] = new[p]
         elif p in old.keys():
             gpu['processes'][p] = new[p]
     for p in list(old.keys()):
         if p not in new.keys() and old[p]['used_memory'] > mem_threshold:
             finished_job(machine_name,gpu,old[p])
-            print('finished: ({})\t{}'.format(gpu['id'], old[p]))
+            if verbose:
+                print('finished: ({})\t{}'.format(gpu['id'], old[p]))
             gpu['processes'].pop(p,None)
 
 
@@ -130,7 +132,7 @@ def draw_icon(machine_name, machine, config_folder):
         ctx.set_source_rgb(color1[0]/255,color1[1]/255,color1[2]/255)
         ctx.fill()
 
-        ctx.rectangle(i+0.5, 1-percentage2, 0.5, percentage2)  # Rectangle(x0, y0, x1, y1)
+        ctx.rectangle(i + 0.5, 1 - percentage2, 0.5, percentage2)  # Rectangle(x0, y0, x1, y1)
         ctx.set_source_rgb(color2[0]/255,color2[1]/255,color2[2]/255)
         ctx.fill()
     if 'i' not in machine.keys():

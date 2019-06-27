@@ -4,6 +4,7 @@ import json
 import sys
 import os
 import argparse
+import time
 
 parser = argparse.ArgumentParser(description='Client for for nvidia multiple smi',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -11,7 +12,8 @@ parser = argparse.ArgumentParser(description='Client for for nvidia multiple smi
 parser.add_argument('--port', '-p', default=26110, help='port to communicate with, make sure it\'s the same as server_smi scripts')
 parser.add_argument('--refresh-rate', '-r', default=10, help='loop rate at which it will check again for connected machines')
 parser.add_argument('--max-size', '-m', default=10240, help='max json size')
-parser.add_argument('--timeout', '-t', default=0.1, help='timeout for servers response. useful when blocked by a firewall')
+parser.add_argument('--timeout', '-t', default=2, help='timeout for servers response. useful when blocked by a firewall')
+parser.add_argument('-v', '--verbose', action='store_true', help='Display machine scanning status on CLI')
 
 
 def get_hosts():
@@ -37,13 +39,20 @@ def update_online_machines(args, hosts, online_machines):
         if name in online_machines:
             continue
         try:
-            s = socket.create_connection((machine['ip'], args.port))
+            if args.verbose:
+                print("connecting to {}... (ip {})    ".format(name, machine['ip']),end='')
+            time.sleep(1)
+            s = socket.create_connection((machine['ip'], args.port), timeout=args.timeout)
             s.send(b'smi')
 
             r = s.recv(args.max_size).decode('utf-8')  # 10ko max
             a = json.loads(r)
+            if args.verbose:
+                print('OK')
 
         except Exception as e:
+            if args.verbose:
+                print('FAIL')
             continue
 
         else:
