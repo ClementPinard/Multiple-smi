@@ -18,7 +18,7 @@ setup(name='nvidia-multiple-smi',
               'client_smi_gui = multiple_smi.client_smi_appindicator:main',
           ]
       },
-      package_data={'multiple_smi': ['data/empy.png', 'data/hosts_to_smi.json']},
+      data_files=[('/etc/systemd/system', ['server_smi.service'])],
       install_requires=[
           'nvidia-ml-py3',
       ]
