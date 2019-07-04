@@ -4,7 +4,7 @@ import os
 import time
 
 default_machines = {
-    "Me": {"ip": "locahost",
+    "Me": {"ip": "localhost",
            "colors": [[108, 208, 84], [202, 255, 112]]
            }
 }
