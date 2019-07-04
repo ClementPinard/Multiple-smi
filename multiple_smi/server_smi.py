@@ -3,7 +3,7 @@
 
 import socket
 import select
-import my_smi
+from . import my_smi
 import json
 import time
 from collections import deque
@@ -18,7 +18,7 @@ parser.add_argument('--port', '-p', default=26110, help='Port to communicate wit
 parser.add_argument('--refresh-rate', '-r', default=1, help='Time rate at which it will listen to sockets')
 parser.add_argument('--store-history', '-s', action='store_true', help='will store gpu usage in a csv file')
 parser.add_argument('--history-rate', '--hr', default=60, metavar='N', help='Will store history usage every N loop')
-parser.add_argument('--history-path', '--hp', default=os.path.join(os.path.expanduser('~'),'.server_smi','history.csv'),
+parser.add_argument('--history-path', '--hp', default=os.path.join(os.path.expanduser('~'), '.server_smi', 'history.csv'),
                     help='csv path to store history')
 
 
@@ -59,7 +59,7 @@ def main():
                 writer.writerow(columns)
 
     tcpsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    tcpsock.bind(('',args.port))
+    tcpsock.bind(('', args.port))
     tcpsock.listen(5)
     clients = {}
 
@@ -103,7 +103,7 @@ def main():
                     if msg == 'smi':
                         data_string = json.dumps(smi)
                         client.send(data_string.encode())
-                except Exception as e:
+                except Exception:
                     pass
 
 

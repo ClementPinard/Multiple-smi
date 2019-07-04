@@ -21,16 +21,24 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3)
 
 `sudo python3 setup.py install`
 
+#### Optional note for Ubuntu 18+ users
+
+If you want to use the gui, as unity is replaced by Gnome-shell, you need to enable appindicators on gnome-shell with `gnome-tweak-tool`, and you need to install python bindings for Appindicator3 :
+
+```bash
+sudo apt install gir1.2-appindicator3-0.1
+```
+
 #### Server side services installation
 
 To allow clients to access your computer's smi stats, simply run
-`server_smi.py`
+`server_smi`
 
 But you can also enable it as a service that will be launched at boot.
 
 ---------------------------
 
-- **Ubuntu 15+** :  the service file allow the server_smi to run automatically during boot
+- **Ubuntu 16+** :  the service file allow the server_smi to run automatically during boot
 ```
 sudo systemctl daemon-reload
 sudo systemctl enable server_smi.service
@@ -54,11 +62,11 @@ sudo update-rc.d -f service_smi_daemon.sh remove
 ### to run the appindicator
 (gnome and unity environment only for the moment):
 
-`client_smi_appindicator.py`
+`client_smi_gui`
 
 ### to run the client_smi (CLI version):
 
-`client_smi.py`
+`client_smi`
 
 
 ### Configuration:

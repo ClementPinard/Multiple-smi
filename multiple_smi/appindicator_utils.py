@@ -1,14 +1,9 @@
-#!/usr/bin/env python
-from __future__ import division
-
 import os
-import signal
-import json
-import threading
 import cairo
 import time
-import client_smi
-
+import json
+import threading
+from . import client_smi
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('AppIndicator3', '0.1')
@@ -19,8 +14,6 @@ from gi.repository import AppIndicator3 as appindicator
 from gi.repository import Notify as notify
 from gi.repository import GObject
 from gi.repository import GLib
-
-client_smi.parser.add_argument('--min-mem-notif', '-n', default=200, help='min memory usage to trigger Notification')
 
 
 def main():
@@ -33,10 +26,10 @@ def main():
             index = '0'
         indicator = appindicator.Indicator.new(
             's'+index+'_'+name,
-            os.path.abspath('/usr/local/data/empty.png'),
+            os.path.join('data', 'empty.png'),
             appindicator.IndicatorCategory.SYSTEM_SERVICES)
         machine['indicator'] = indicator
-        machine['indicator'].set_label(name,'')
+        machine['indicator'].set_label(name, '')
     notify.init('notifier')
 
     def smi():
@@ -55,7 +48,7 @@ def main():
                         s.send(b'smi')
                         r = s.recv(args.max_size).decode('utf-8')
                         a = json.loads(r)
-                    except Exception as e:
+                    except Exception:
                         GLib.idle_add(lost_machine, name, hosts[name])
                         online_machines.remove(name)
                     else:
@@ -80,18 +73,18 @@ def update_processes_list(machine_name, gpu, new, mem_threshold, verbose):
     old = gpu['processes']
     for p in new.keys():
         if p not in old.keys() and new[p]['used_memory'] > mem_threshold:
-            new_job(machine_name,gpu,new[p])
+            new_job(machine_name, gpu, new[p])
             if verbose:
-                print('new: ({})\t{}'.format(gpu['id'],new[p]))
+                print('new: ({})\t{}'.format(gpu['id'], new[p]))
             gpu['processes'][p] = new[p]
         elif p in old.keys():
             gpu['processes'][p] = new[p]
     for p in list(old.keys()):
         if p not in new.keys() and old[p]['used_memory'] > mem_threshold:
-            finished_job(machine_name,gpu,old[p])
+            finished_job(machine_name, gpu, old[p])
             if verbose:
                 print('finished: ({})\t{}'.format(gpu['id'], old[p]))
-            gpu['processes'].pop(p,None)
+            gpu['processes'].pop(p, None)
 
 
 def update_menu(machine):
@@ -127,17 +120,17 @@ def draw_icon(machine_name, machine, config_folder):
 
     for i in range(machine['nGPUs']):
         gpu = machine['GPUs'][i]
-        percentage1,percentage2 = gpu['utilization']/100,gpu['used_mem']/gpu['memory']
+        percentage1, percentage2 = gpu['utilization']/100, gpu['used_mem']/gpu['memory']
         ctx.rectangle(i, 1-percentage1, 0.5, percentage1)  # Rectangle(x0, y0, x1, y1)
-        ctx.set_source_rgb(color1[0]/255,color1[1]/255,color1[2]/255)
+        ctx.set_source_rgb(color1[0]/255, color1[1]/255, color1[2]/255)
         ctx.fill()
 
         ctx.rectangle(i + 0.5, 1 - percentage2, 0.5, percentage2)  # Rectangle(x0, y0, x1, y1)
-        ctx.set_source_rgb(color2[0]/255,color2[1]/255,color2[2]/255)
+        ctx.set_source_rgb(color2[0]/255, color2[1]/255, color2[2]/255)
         ctx.fill()
     if 'i' not in machine.keys():
         machine['i'] = 0
-    png_name = os.path.join(config_folder,"{}{}.png".format(machine_name, machine['i']))
+    png_name = os.path.join(config_folder, "{}{}.png".format(machine_name, machine['i']))
     machine['i'] = (machine['i']+1) % 2
 
     surface.write_to_png(png_name)  # Output to PNG
@@ -147,7 +140,7 @@ def draw_icon(machine_name, machine, config_folder):
 def new_job(machine_name, gpu, job):
     notify.Notification.new(
         "New Job for {}".format(machine_name),
-        "{}\n{}\n{:.2f} Go usage".format(gpu['id'],job['process_name'],job['used_memory']/1024),
+        "{}\n{}\n{:.2f} Go usage".format(gpu['id'], job['process_name'], job['used_memory']/1024),
         None).show()
     return
 
@@ -155,7 +148,7 @@ def new_job(machine_name, gpu, job):
 def finished_job(machine_name, gpu, job):
     notify.Notification.new(
         "Finished Job for {}".format(machine_name),
-        "{}\n{}\n{:.2f} Go usage".format(gpu['id'],job['process_name'],job['used_memory']/1024),
+        "{}\n{}\n{:.2f} Go usage".format(gpu['id'], job['process_name'], job['used_memory']/1024),
         None).show()
     return
 
@@ -187,9 +180,3 @@ def lost_machine(machine_name, machine):
         machine['ip'],
         None).show()
     return
-
-
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    GObject.threads_init()
-    main()

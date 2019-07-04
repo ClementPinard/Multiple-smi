@@ -6,11 +6,19 @@ setup(name='nvidia-multiple-smi',
       license='MIT',
       author='Clément Pinard',
       author_email='clempinard@gmail.com',
-      description='Python Bindings for the NVIDIA Management Library over the network',
-      py_modules=['my_smi'],
-      scripts=['server_smi.py','client_smi.py','client_smi_appindicator.py'],
-      data_files=[('data',['empty.png','hosts_to_smi.json']),
-                  ('/etc/systemd/system', ['server_smi.service'])],
+      description='Look up GPU usage on multiple servers at the same time',
+      packages=['multiple_smi'],
+      include_package_data=True,
+      entry_points={
+          'console_scripts': [
+              'client_smi = multiple_smi.client_smi:main',
+              'server_smi = multiple_smi.server_smi:main',
+          ],
+          'gui_scripts': [
+              'client_smi_gui = multiple_smi.client_smi_appindicator:main',
+          ]
+      },
+      package_data={'multiple_smi': ['data/empy.png', 'data/hosts_to_smi.json']},
       install_requires=[
           'nvidia-ml-py3',
       ]
