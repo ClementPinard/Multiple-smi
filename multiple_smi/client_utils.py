@@ -2,7 +2,12 @@ import socket
 import json
 import os
 import time
-import pkg_resources
+
+default_machines = {
+    "Me": {"ip": "locahost",
+           "colors": [[108, 208, 84], [202, 255, 112]]
+           }
+}
 
 
 def get_hosts():
@@ -15,8 +20,7 @@ def get_hosts():
         with open(file_path) as f:
             hosts = json.load(f)
     else:
-        with open(os.path.join(pkg_resources.resource_filename('multiple_smi', 'data/'), 'hosts_to_smi.json')) as f:
-            hosts = json.load(f)
+        hosts = default_machines
         with open(file_path, 'w') as f:
             json.dump(hosts, f, indent=2)
     return hosts, config_folder
