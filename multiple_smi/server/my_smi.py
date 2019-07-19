@@ -29,7 +29,10 @@
 
 from pynvml import *
 import datetime
+from cpuinfo import get_cpu_info
+import psutil
 
+CPU_NAME = get_cpu_info()['brand']
 #
 # Converts errors into string messages
 #
@@ -45,18 +48,17 @@ def handleError(err):
 
 
 def DeviceQuery():
-    result = {}
+    result = {'timestap': str(datetime.date.today()),
+              'attached_gpus': []}
     try:
         #
         # Initialize NVML
         #
         nvmlInit()
 
-        result['timestamp'] = str(datetime.date.today())
         result['driver_version'] = nvmlSystemGetDriverVersion().decode('utf-8')
 
         deviceCount = nvmlDeviceGetCount()
-        result['attached_gpus']  = []
 
         for i in range(0, deviceCount):
             handle = nvmlDeviceGetHandleByIndex(i)
@@ -247,7 +249,7 @@ def DeviceQuery():
                     gpu_procs[p.pid]['process_name'] = name
 
                     if (p.usedGpuMemory is None):
-                        mem = 'N\A'
+                        mem = 'N\\A'
                     else:
                         mem = (p.usedGpuMemory / 1024 / 1024)
                     gpu_procs[p.pid]['used_memory'] = mem
@@ -258,6 +260,21 @@ def DeviceQuery():
     except NVMLError as err:
         pass
 
-    nvmlShutdown()
+    try:
+        nvmlShutdown()
+    except NVMLError as err:
+        pass
+
+    cpu_stat = {}
+    cpu_stat['name'] = CPU_NAME
+    cpu_stat['usage'] = psutil.cpu_percent()
+
+    vmem = psutil.virtual_memory()
+    ram_stat = {'total': vmem.total/(1024**3),
+                'used': vmem.used/(1024**3),
+                'usage': vmem.percent}
+
+    result['cpu'] = cpu_stat
+    result['ram'] = ram_stat
 
     return result
