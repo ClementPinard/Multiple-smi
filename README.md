@@ -18,7 +18,7 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3), and `psutil`.
 
 - Allows you to get a notification every time a new process is launched or finished. A default minimum of 1GB memory use is needed for the notification to appear.
   - Available notification backends :
-      - lib notify
+      - [gnome libnotify](https://developer.gnome.org/libnotify/)
       - [ntfy](https://ntfy.readthedocs.io/en/latest/)
 
 ![notif](https://github.com/ClementPinard/nvidia-multiple-smi/blob/master/images/Sans%20titre.png)
