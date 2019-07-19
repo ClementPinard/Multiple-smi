@@ -2,6 +2,7 @@ import os
 import threading
 import gi
 import time
+import signal
 
 from .default_frontend import BaseFrontend
 from .icon_utils import draw_icon
@@ -66,6 +67,7 @@ class AppIdFrontend(BaseFrontend):
 
     def launch(self, func, *args, **kwargs):
         kwargs['frontend'] = self
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
         thread = threading.Thread(target=func, args=args, kwargs=kwargs)
         thread.daemon = True
         thread.start()
@@ -103,3 +105,4 @@ class AppIdFrontend(BaseFrontend):
     def lost_machine(self, machine_name, machine):
         machine['summary']['indicator'].set_status(appindicator.IndicatorStatus.PASSIVE)
         del machine['summary']['indicator']
+        del machine['summary']['menu']
