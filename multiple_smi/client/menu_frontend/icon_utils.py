@@ -59,3 +59,13 @@ def draw_icon(machine):
         ctx.set_source_rgb(color2[0]/255, color2[1]/255, color2[2]/255)
         ctx.fill()
     return(surface)
+
+
+def give_default_colors(hosts):
+    colorless = []
+    for name, v in hosts.items():
+        if 'colors' not in v.keys():
+            colorless.append(name)
+    names = sorted(colorless)
+    for name, color in zip(names, DEFAULT_COLORS):
+        hosts[name]['colors'] = color

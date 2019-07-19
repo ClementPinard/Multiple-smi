@@ -135,12 +135,15 @@ def main():
     if args.frontend == "default":
         from .menu_frontend.default_frontend import BaseFrontend
         frontend = BaseFrontend(config_folder)
-    elif args.frontend == "appindicator":
-        from .menu_frontend.appindicator import AppIdFrontend
-        frontend = AppIdFrontend(config_folder)
-    elif args.frontend == "argos":
-        from .menu_frontend.argos import ArgosFrontend
-        frontend = ArgosFrontend(config_folder, args.argos_folder)
+    else:
+        from.menu_frontend.icon_utils import give_default_colors
+        give_default_colors(hosts)
+        if args.frontend == "appindicator":
+            from .menu_frontend.appindicator import AppIdFrontend
+            frontend = AppIdFrontend(config_folder)
+        elif args.frontend == "argos":
+            from .menu_frontend.argos import ArgosFrontend
+            frontend = ArgosFrontend(config_folder, args.argos_folder)
 
     try:
         frontend.launch(smi, args, hosts)

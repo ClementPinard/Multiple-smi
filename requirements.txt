@@ -4,3 +4,5 @@ colorspacious
 python-nmap
 py-cpuinfo
 pycairo
+pyzmq
+psutil
