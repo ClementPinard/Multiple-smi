@@ -1,23 +1,24 @@
 #!/usr/bin/env python
 import sys
 import argparse
-from .client_utils import get_hosts, update_online_machines
+from .client_utils import get_hosts, update_online_machines, get_new_machines
 from .notifier_util import init_notifier
 import zmq
 import time
 from threading import Thread
+from queue import Queue, Empty
 
 parser = argparse.ArgumentParser(description='Client for for Multiple smi',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('--port', '-p', default=26110, type=int, help='port to communicate with, make sure it\'s the same as server_smi scripts')
-parser.add_argument('--refresh-period', '-r', default=10, type=int, help='loop rate at which it will check again for connected machines')
+parser.add_argument('--refresh-period', '-r', default=30, type=int, help='time in seconds before it checks again for connected machines')
 parser.add_argument('--timeout', '-t', default=2, type=float, help='timeout for servers response. useful when blocked by a firewall')
 parser.add_argument('-v', '--verbose', action='store_true', help='Display machine scanning status on CLI')
 parser.add_argument('--tunnel', default=None, help='Make a ssh tunnel through a specified server (ex: Me@localhost)')
 parser.add_argument('--hosts-list-path', '-j', default=None, help='path to json file containing hosts info, ip, ports and icon colors')
 
-parser.add_argument('--notif-backend', default='gnome', choices=['gnome', 'ntfy'])
+parser.add_argument('--notif-backend', default=None, choices=['gnome', 'ntfy'], help='which beckend to choose for notifications')
 parser.add_argument('--frontend', default='default', choices=['default', 'appindicator', 'argos'],
                     help='frontend to use to render the menu. argos compatible with bitbar')
 parser.add_argument('--argos-folder', default=None, help='config folder of argos or Bitbar')
@@ -26,22 +27,25 @@ parser.add_argument('--min-mem-notif', '-n', default=1, type=float, help='min me
 
 def smi(args, hosts, frontend):
     online_machines = []
-    new_machines = []
+    new_machines_queue = Queue()
     start = time.time()
     elapsed = None
     while True:
         if elapsed is None or elapsed > args.refresh_period:
-            thread = Thread(target=update_online_machines, args=(args, hosts, online_machines, new_machines))
+            thread = Thread(target=update_online_machines, args=(args, hosts, online_machines, new_machines_queue))
             thread.daemon = True
             thread.start()
             start = time.time()
-        if new_machines:
-            frontend.new_machines(new_machines, hosts)
-            notify_new_machines(args, new_machines, hosts)
-            new_machines = []
+
+        new_machines = get_new_machines(new_machines_queue)
+        frontend.new_machines(new_machines, hosts)
+        notify_new_machines(args, new_machines, hosts)
+        online_machines.extend(new_machines)
+        new_machines = []
+
         elapsed = time.time()-start
         for name, machine in hosts.items():
-            if name in online_machines and name not in new_machines:
+            if name in online_machines:
                 s = machine['socket']
                 p = machine['poller']
                 if p.poll(1000*args.timeout):

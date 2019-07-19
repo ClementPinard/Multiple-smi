@@ -102,3 +102,4 @@ class AppIdFrontend(BaseFrontend):
 
     def lost_machine(self, machine_name, machine):
         machine['summary']['indicator'].set_status(appindicator.IndicatorStatus.PASSIVE)
+        del machine['summary']['indicator']

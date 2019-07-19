@@ -3,6 +3,7 @@ from zmq import ssh
 import json
 import os
 import time
+from queue import Queue, Empty
 
 
 def get_hosts():
@@ -21,7 +22,17 @@ def get_hosts():
     return hosts, config_folder
 
 
-def update_online_machines(args, hosts, online_machines, new_machines):
+def get_new_machines(new_machines_queue):
+    result = []
+    while True:
+        try:
+            result.append(new_machines_queue.get_nowait())
+        except Empty:
+            break
+    return result
+
+
+def update_online_machines(args, hosts, online_machines, new_machines=Queue()):
     current_new_machines = []
     for name, machine in hosts.items():
         if name in online_machines:
@@ -32,7 +43,7 @@ def update_online_machines(args, hosts, online_machines, new_machines):
             log_string = "connecting to {}... (ip {})    ".format(name, machine['ip'])
             time.sleep(1)
             socket = args.context.socket(zmq.SUB)
-            if args.tunnel:
+            if "tunnel" in vars(args).keys() and args.tunnel:
                 ssh.tunnel_connection(socket, "tcp://{}:{}".format(machine['ip'], args.port), args.tunnel)
             else:
                 socket.connect("tcp://{}:{}".format(machine['ip'], args.port))
@@ -57,9 +68,12 @@ def update_online_machines(args, hosts, online_machines, new_machines):
             machine['socket'] = socket
             machine['poller'] = poller
             machine['full_stats'] = info
-            summary = {'ip': machine['ip'],
-                       'name': name}
-            machine['summary'] = summary
+
+            if "summary" not in machine.keys():
+                machine['summary'] = {'ip': machine['ip'],
+                                      'name': name}
+
+            summary = machine['summary']
 
             summary['cpu'] = info['cpu']
             summary['ram'] = info['ram']
@@ -79,6 +93,6 @@ def update_online_machines(args, hosts, online_machines, new_machines):
                 gpu['used_mem'] = gpu_info['used_memory']/1024
                 gpu['processes'] = gpu_info['processes']
             current_new_machines.append(name)
-        online_machines.extend(current_new_machines)
-        new_machines.extend(current_new_machines)
-    return
+    for m in current_new_machines:
+        new_machines.put(m)
+    return new_machines

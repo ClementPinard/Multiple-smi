@@ -3,8 +3,9 @@ from .icon_utils import draw_icon
 import os
 import stat
 import json
+import sys
 
-argos_template = '''#!/usr/bin/env python3
+argos_template = '''#!{python}
 
 import re
 import time
@@ -17,7 +18,7 @@ with open("{icon_path}", 'rb') as bytes:
 print("{name} | image='{{}}'\\n---".format(img_str.decode()))
 
 try:
-    with open("/home/clement/.client_smi/client_Nat.json") as f:
+    with open("{home}.client_smi/client_Nat.json") as f:
         info = json.load(f)
 except:
     sys.exit()
@@ -48,7 +49,11 @@ class ArgosFrontend(BaseFrontend):
 
     def build_menu(self, machine_name, machine):
         icon_path_string = os.path.join(self.config_folder, "{}.png".format(machine_name))
-        script_string = argos_template.format(icon_path=icon_path_string, name=machine_name, ip=machine['ip'])
+        script_string = argos_template.format(python=sys.executable,
+                                              home=os.path.expanduser("~"),
+                                              icon_path=icon_path_string,
+                                              name=machine_name,
+                                              ip=machine['ip'])
         script_path = os.path.join(self.argos_folder, "{}.1s.py".format(machine_name))
         with open(script_path, 'w') as f:
             f.write(script_string)

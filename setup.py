@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(name='Multiple smi',
-      version='2.0',
+      version='2.0.3',
       url='https://github.com/ClementPinard/multiple-smi',
       license='MIT',
       author='Clément Pinard',
@@ -26,7 +26,7 @@ setup(name='Multiple smi',
           'python-nmap',
           'colorspacious',
           'py-cpuinfo',
-          'pycairo',
+          'cairocffi==0.6',
           'nvidia-ml-py3'
       ],
       classifiers=[

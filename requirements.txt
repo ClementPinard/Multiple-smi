@@ -3,4 +3,4 @@ nvidia-ml-py3
 colorspacious
 python-nmap
 py-cpuinfo
-cairo
+cairocffi==0.6

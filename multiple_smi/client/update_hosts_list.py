@@ -4,7 +4,8 @@ import os
 import argparse
 import socket
 import zmq
-from .client_utils import get_hosts, update_online_machines
+from .client_utils import get_hosts, update_online_machines, get_new_machines
+from copy import deepcopy
 
 
 def sniff_port(port=26110, ip=None, search_level=1):
@@ -23,25 +24,28 @@ def sniff_port(port=26110, ip=None, search_level=1):
     result = nm.scan(ip_range, port, arguments='--open')['scan']
     hosts = {}
     for distant_ip, info in result.items():
+        if ip == distant_ip:
+            distant_ip = 'localhost'
         name = info['hostnames'][0]['name'].split('.')[0]
         hosts[name] = {"ip": distant_ip, "port": port}
     return hosts
 
 
 def test_hosts(args, hosts):
-    online, _ = update_online_machines(args, hosts, [])
+    online = update_online_machines(args, hosts, [])
+    online = get_new_machines(online)
     if args.verbose:
         print('found machines :')
         for name in online:
-            machine = hosts[name]
-            print("{} \t ({})".format(name, machine['ip']))
-            print("{} GPU(s):".format(machine['nGPUs']))
-            for gpu in machine['GPUs']:
+            summary = hosts[name]['summary']
+            print("{} \t ({})".format(name, summary['ip']))
+            print("{} GPU(s):".format(summary['nGPUs']))
+            for gpu in summary['GPUs']:
                 print("{}:\t{:.1f} GB".format(gpu['name'], gpu['memory']))
             print("CPU:")
-            print("{}".format(machine['cpu']['name']))
+            print("{}".format(summary['cpu']['name']))
             print("RAM:")
-            print("{:.1f} GB".format(machine['ram']['total']))
+            print("{:.1f} GB".format(summary['ram']['total']))
 
             print("")
 
@@ -57,10 +61,11 @@ parser.add_argument('--ip', default=None, type=str,
                     help='ip adress from which port will be sniffed. default set to your own adress')
 parser.add_argument('--search-level', default=1, type=int,
                     help='range of search for nmap, cannot be above 4, advised to keep it under 1')
+parser.add_argument('--dry', '-d', action='store_true', help='perform a dry run: don\'t update the JSON file')
 parser.add_argument('--verbose', '-v', action='store_true')
 
 
-def update_json():
+def main():
     args = parser.parse_args()
     args.context = zmq.Context()
     args.timeout = 2
@@ -68,18 +73,18 @@ def update_json():
 
     old_ip_list = [v['ip'] for i, v in old_hosts.items()]
     new_hosts = sniff_port(args.port, args.ip, args.search_level)
+    online = test_hosts(args, deepcopy(new_hosts))
 
-    for k, v in new_hosts.items():
-        if v['ip'] not in old_ip_list:
-            old_hosts[k] = v
+    if not args.dry:
+        for k, v in new_hosts.items():
+            if v['ip'] not in old_ip_list and k in online:
+                old_hosts[k] = v
 
-    file_path = os.path.join(config_folder, 'hosts_to_smi.json')
-    with open(file_path, 'w') as f:
-            json.dump(old_hosts, f, indent=2)
-
-    if args.verbose:
-        test_hosts(args, new_hosts)
+        file_path = os.path.join(config_folder, 'hosts_to_smi.json')
+        print(old_hosts)
+        with open(file_path, 'w') as f:
+                json.dump(old_hosts, f, indent=2)
 
 
 if __name__ == "__main__":
-    update_json()
+    main()

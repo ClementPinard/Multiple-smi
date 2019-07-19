@@ -32,6 +32,7 @@ parser.add_argument('--uninstall', '-u', action='store_true', help='If selected,
 
 def uninstall(args):
     try:
+        subprocess.check_call(["systemctl", "stop", "server_smi.service"])
         subprocess.check_call(["systemctl", "disable", "server_smi.service"])
         if os.path.isfile(args.service_file_path):
             os.remove(args.service_file_path)
