@@ -74,7 +74,6 @@ sudo update-rc.d -f service_smi_daemon.sh remove
 ```
 
 ### to run the appindicator
-(gnome and unity environment only for the moment):
 
 `client_smi --frontend {argos,appindicator} --notify-backend {gnome,ntfy}`
 
@@ -85,7 +84,7 @@ sudo update-rc.d -f service_smi_daemon.sh remove
 
 ### Configuration:
 
-To know which servers have a running `server_smi` in your local network, you can use the `discover_hosts` script, it will automatically populate a json file in `~/.client_smi/hosts_to_smi.json`
+To know which servers have a running `server_smi` in your local network, you can use the `discover_hosts` script, it will automatically populate a json file in `~/.client_smi/hosts_to_smi.json` with found machines.
 
 ```
 discover_hosts
