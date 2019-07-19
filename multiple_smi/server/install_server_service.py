@@ -27,13 +27,26 @@ parser.add_argument('--store-history', '-s', action='store_true', help='will sto
 parser.add_argument('--history-rate', '--hr', default=60, type=int, metavar='N', help='Will store history usage every N loop')
 parser.add_argument('--history-path', '--hp', default='/etc/.server_smi',
                     help='directory path to store history csv files')
+parser.add_argument('--uninstall', '-u', action='store_true', help='If selected, will deisable the service and delete the service file')
 
 
-def main():
-    args = parser.parse_args()
-    if os.geteuid() != 0:
-        sys.exit("You need to have root privileges to run this script.\n"
-                 "Please try again, this time using 'sudo'. Exiting.")
+def uninstall(args):
+    try:
+        subprocess.check_call(["systemctl", "disable", "server_smi.service"])
+        if os.path.isfile(args.service_file_path):
+            os.remove(args.service_file_path)
+            subprocess.call(["systemctl", "daemon-reload"])
+            print("'server_smi.service' file was correctly deleted from systemctl")
+        else:
+            raise Exception("'server_smi.service' file not found and was not removed,\n"
+                            "although it is still available for systemctl.\n"
+                            "Check specified systemd folder argument")
+    except CalledProcessError:
+        raise Exception("Service file not available for systemctl,\n"
+                        "it was probably already uninstalled")
+
+
+def install(args):
     if args.server_smi_path is None:
         try:
             args.server_smi_path = subprocess.check_output(['which', 'server_smi']).decode()[:-1]
@@ -50,18 +63,35 @@ def main():
                                                  history_string=history_param_string,
                                                  port=args.port,
                                                  rate=args.refresh_rate)
-    with open(os.path.join(args.systemd_path, "server_smi.service"), 'w') as f:
+    with open(args.service_file_path, 'w') as f:
             f.write(service_final_string)
 
     subprocess.call(["systemctl", "daemon-reload"])
     subprocess.call(["systemctl", "enable", "server_smi.service"])
 
     print("server_smi is now installed and will run at next reboot.")
+    print("You can access its stauts with the following command (no sudo needed)")
+    print("")
+    print("systemctl status server_smi.service")
+    print("")
     answer = None
     while answer is None:
-        raw_answer = input("Run it now? (will launch \"systemctl start server_smi.service)\"")
-        if raw_answer.lower() in ['y', 'o']:
+        raw_answer = input("Run it now? (will launch \"systemctl start server_smi.service)\" [Y/n]")
+        if raw_answer.lower() in ['y', 'o', '']:
             answer = True
             subprocess.call(["systemctl", "start", "server_smi.service"])
         elif raw_answer.lower() == 'n':
             answer = False
+
+
+def main():
+    args = parser.parse_args()
+    if os.geteuid() != 0:
+        sys.exit("You need to have root privileges to run this script.\n"
+                 "Please try again, this time using 'sudo'. Exiting.")
+
+    args.service_file_path = os.path.join(args.systemd_path, 'server_smi.service')
+    if args.uninstall:
+        uninstall(args)
+    else:
+        install(args)

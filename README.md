@@ -1,9 +1,9 @@
-# Nvidia multiple smi
+# Multiple smi
 
 ### Look up GPU/CPU/RAM usage on multiple machines at the same time !
 intended to work with python 3+
 
-Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3), and psutil.
+Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3), and `psutil`.
 
 ### Features
 - Allows you to get `nvidia-smi` output and `pustil`information for multiple connected computers at once, and display it on a a selected GUI.
@@ -28,7 +28,12 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3), and psutil.
 
 ### installation:
 
-`sudo python3 setup.py install`
+```[sudo] python3 setup.py install```
+```[sudo] pip3 install multiple-smi```
+
+If using `appindicator` frontend or `gnome` notifier, it is advised to install it with system python, with which the `gi` package can be imported.
+
+For `server_smi` it is also advised to install it with system python because then it will be available in `sudo` mode, needed to install the systemctl service.
 
 #### Optional note for Ubuntu 18+ users
 
@@ -53,8 +58,9 @@ sudo install_server_service
 ```
 to uninstall: 
 ```
-sudo systemctl disable server_smi.service
+sudo install_server_service -u
 ```
+(make the `systemd` folder specified is the same as during installation)
 
 - **Ubuntu 14** : you have to daemonize the script and put it in init.d, you can do it with the provided script `server_smi_daemon.sh`
 ```
@@ -79,7 +85,7 @@ sudo update-rc.d -f service_smi_daemon.sh remove
 
 ### Configuration:
 
-To know which servers have a running `server_smi` in your local network, you can use the `discover_hosts` script
+To know which servers have a running `server_smi` in your local network, you can use the `discover_hosts` script, it will automatically populate a json file in `~/.client_smi/hosts_to_smi.json`
 
 ```
 discover_hosts

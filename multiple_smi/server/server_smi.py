@@ -9,7 +9,7 @@ import argparse
 import zmq
 import datetime
 
-parser = argparse.ArgumentParser(description='Server for for nvidia multiple smi',
+parser = argparse.ArgumentParser(description='Server for for Multiple smi',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('--port', '-p', default=26110, help='Port to communicate with, make sure it\'s the same as client_smi scripts')

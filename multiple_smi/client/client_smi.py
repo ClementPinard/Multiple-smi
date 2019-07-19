@@ -7,12 +7,12 @@ import zmq
 import time
 from threading import Thread
 
-parser = argparse.ArgumentParser(description='Client for for nvidia multiple smi',
+parser = argparse.ArgumentParser(description='Client for for Multiple smi',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 parser.add_argument('--port', '-p', default=26110, type=int, help='port to communicate with, make sure it\'s the same as server_smi scripts')
 parser.add_argument('--refresh-period', '-r', default=10, type=int, help='loop rate at which it will check again for connected machines')
-parser.add_argument('--timeout', '-t', default=1.5, type=float, help='timeout for servers response. useful when blocked by a firewall')
+parser.add_argument('--timeout', '-t', default=2, type=float, help='timeout for servers response. useful when blocked by a firewall')
 parser.add_argument('-v', '--verbose', action='store_true', help='Display machine scanning status on CLI')
 parser.add_argument('--tunnel', default=None, help='Make a ssh tunnel through a specified server (ex: Me@localhost)')
 parser.add_argument('--hosts-list-path', '-j', default=None, help='path to json file containing hosts info, ip, ports and icon colors')
