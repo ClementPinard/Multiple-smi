@@ -1,4 +1,4 @@
-import cairocffi as cairo
+import cairo
 import numpy as np
 from colorspacious import cspace_convert
 from itertools import cycle

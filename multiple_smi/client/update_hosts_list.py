@@ -1,4 +1,3 @@
-import nmap
 import json
 import os
 import argparse
@@ -6,6 +5,12 @@ import socket
 import zmq
 from .client_utils import get_hosts, update_online_machines, get_new_machines
 from copy import deepcopy
+
+try:
+    import nmap
+except Exception as e:
+    print("you need to install nmap with apt or brew")
+    raise e
 
 
 def sniff_port(port=26110, ip=None, search_level=1):
