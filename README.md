@@ -1,16 +1,25 @@
-# Nvidia multiple smi
+# Multiple smi
 
-### Python bindings for pyNVML library over network
+### Look up GPU/CPU/RAM usage on multiple machines at the same time !
 intended to work with python 3+
 
-Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3)
+Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3), and `psutil`.
 
 ### Features
-- Allows you to get `nvidia-smi` output for multiple connected computers at once, and display it on a nice appindicator for Unity/Gnome users.
+- Allows you to get `nvidia-smi` output and `pustil`information for multiple connected computers at once, and display it on a a selected GUI.
+  - Availables frontends :
+      - Ubuntu Appindicator
+          - works best on Unity, partially supported on Gnome-shell
+      - [Argos](https://github.com/p-e-w/argos)
+          - works on Gnome shell, but also on MacOS thanks to [BitBar](https://getbitbar.com/) compatibility
+
 
 ![status](https://github.com/ClementPinard/nvidia-multiple-smi/blob/master/images/status%20bar.png)
 
-- Allows you to get a notification every time a new process is launched or finished. A minimum of 200MB memory use is needed for the notification to appear.
+- Allows you to get a notification every time a new process is launched or finished. A default minimum of 1GB memory use is needed for the notification to appear.
+  - Available notification backends :
+      - [gnome libnotify](https://developer.gnome.org/libnotify/)
+      - [ntfy](https://ntfy.readthedocs.io/en/latest/)
 
 ![notif](https://github.com/ClementPinard/nvidia-multiple-smi/blob/master/images/Sans%20titre.png)
 
@@ -19,28 +28,41 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3)
 
 ### installation:
 
-`sudo python3 setup.py install`
+```[sudo] python3 setup.py install```
+```[sudo] pip3 install multiple-smi```
+
+If using `appindicator` frontend or `gnome` notifier, it is advised to install it with system python, with which the `gi` package can be imported.
+
+For `server_smi` it is also advised to install it with system python because then it will be available in `sudo` mode, needed to install the systemctl service.
+
+#### Optional note for Ubuntu 18+ users
+
+If you want to use the appindicator fronted, as unity is replaced by Gnome-shell, you need to enable appindicators on gnome-shell with `gnome-tweak-tool`, and you need to install python bindings for Appindicator3 :
+
+```bash
+sudo apt install gir1.2-appindicator3-0.1
+```
 
 #### Server side services installation
 
 To allow clients to access your computer's smi stats, simply run
-`server_smi.py`
+`server_smi`
 
 But you can also enable it as a service that will be launched at boot.
 
 ---------------------------
 
-- **Ubuntu 15+** :  the service file allow the server_smi to run automatically during boot
+- **Ubuntu 16+** :  A script is provided to automatically create the service file, whih will allow the server_smi to run automatically during boot (some options are available)
 ```
-sudo systemctl daemon-reload
-sudo systemctl enable server_smi.service
+sudo install_server_service
 ```
 to uninstall: 
 ```
-sudo systemctl disable server_smi.service
+sudo install_server_service -u
 ```
+(make the `systemd` folder specified is the same as during installation)
 
-- **Ubuntu 14** : you have to daemonize the script and put it in init.d
+- **Ubuntu 14** : you have to daemonize the script and put it in init.d, you can do it with the provided script `server_smi_daemon.sh`
 ```
 sudo cp server_smi_daemon.sh /etc/init.d/.
 sudo chmod 0755 /etc/init.d/server_smi_daemon.sh
@@ -52,24 +74,37 @@ sudo update-rc.d -f service_smi_daemon.sh remove
 ```
 
 ### to run the appindicator
-(gnome and unity environment only for the moment):
 
-`client_smi_appindicator.py`
+`client_smi --frontend {argos,appindicator} --notify-backend {gnome,ntfy}`
 
-### to run the client_smi (CLI version):
+### to run the client_smi as only a CLI tool with no gui or notificaion:
 
-`client_smi.py`
+`client_smi`
 
 
 ### Configuration:
 
-To add your own hosts, simply run a smi_client (CLI or gnome) once and add your entries in the json file that should be here:
+To know which servers have a running `server_smi` in your local network, you can use the `discover_hosts` script, it will automatically populate a json file in `~/.client_smi/hosts_to_smi.json` with found machines.
+
+```
+discover_hosts
+```
+
+To add your own hosts manually, simply run a `client_smi` or `discover_hosts` once and add your entries in the json file that should be created here:
 `~/.client_smi/hosts_to_smi.json`
 
-Default ones are ml1 and ml2 with associated colors
+### Tunnel Connexion
+
+Thanks to `pyzmq` backend for netork, a tunnel connexion is available, when you are outside your usual local network and have to go through a bastion.
+
+Simply launch `client_smi` with `--tunnel` option set to your bastion address
+
+```
+client_smi --tunnel user@bastion_ip
+```
 
 ### Gpu usage stats:
 
-Server-side, gpu usage history is stored in `~/.server_smi/history.csv` if launched from CLI, `/etc/server_smi/history.csv` if launched from systemctl/init.d.  Usage is written on it every ~60 sec, feel free to make some data science with it.
+Server-side, gpu usage history is stored in `~/.server_smi/{date}.csv` if launched from CLI, `/etc/server_smi/{date}.csv` if launched from systemctl/init.d.  Usage is written on it every ~60 sec, feel free to make some data science with it.
 
-To disable it, you can remove option `-s` in server_smi.service (line 7) or server_smi_daemon.sh (line 6) before installing
+To enable it, you can use option `-s` in `install_server_service` or add it in `server_smi_daemon.sh` (line 6) before installing
