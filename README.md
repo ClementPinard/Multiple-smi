@@ -31,6 +31,11 @@ Based on [pyNVML](https://pypi.python.org/pypi/nvidia-ml-py3), and `psutil`.
 ```[sudo] python3 setup.py install```
 ```[sudo] pip3 install multiple-smi```
 
+Needed libraries, you need to install them with your package manager (e.g. `apt` for ubuntu or `brew` for MacOS) :
+ * `nmap`
+ * `libcairo2-dev` (if you need to install `pycairo manually`)
+ * `pyzmq`
+
 If using `appindicator` frontend or `gnome` notifier, it is advised to install it with system python, with which the `gi` package can be imported.
 
 For `server_smi` it is also advised to install it with system python because then it will be available in `sudo` mode, needed to install the systemctl service.
