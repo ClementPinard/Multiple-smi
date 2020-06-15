@@ -32,13 +32,17 @@ import datetime
 from cpuinfo import get_cpu_info
 import psutil
 
-CPU_NAME = get_cpu_info()['brand']
-#
-# Converts errors into string messages
-#
+cpu_info = get_cpu_info()
+try:
+    CPU_NAME = cpu_info['brand']
+except KeyError:
+    CPU_NAME = cpu_info['brand_raw']
 
 
 def handleError(err):
+    #
+    # Converts errors into string messages
+    #
     if (err.value == NVML_ERROR_NOT_SUPPORTED):
         return "N/A"
     else:

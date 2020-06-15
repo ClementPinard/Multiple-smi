@@ -65,7 +65,7 @@ def install(args):
                                                  port=args.port,
                                                  rate=args.refresh_rate)
     with open(args.service_file_path, 'w') as f:
-            f.write(service_final_string)
+        f.write(service_final_string)
 
     subprocess.call(["systemctl", "daemon-reload"])
     subprocess.call(["systemctl", "enable", "server_smi.service"])
@@ -77,7 +77,7 @@ def install(args):
     print("")
     answer = None
     while answer is None:
-        raw_answer = input("Run it now? (will launch \"systemctl start server_smi.service)\" [Y/n]")
+        raw_answer = input("Run it now? (will launch \"systemctl start server_smi.service\") [Y/n]")
         if raw_answer.lower() in ['y', 'o', '']:
             answer = True
             subprocess.call(["systemctl", "start", "server_smi.service"])

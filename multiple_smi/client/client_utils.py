@@ -6,7 +6,7 @@ import time
 from queue import Queue, Empty
 
 
-def get_hosts():
+def get_hosts(save_options=False, **args):
     home = os.path.expanduser("~")
     config_folder = os.path.join(home, '.client_smi')
     if not os.path.exists(config_folder):
@@ -19,7 +19,20 @@ def get_hosts():
         hosts = {}
         with open(file_path, 'w') as f:
             json.dump(hosts, f, indent=2)
-    return hosts, config_folder
+    config_file_path = os.path.join(config_folder, 'client_options.json')
+    if save_options and len(args) > 0:
+        with open(config_file_path, 'w') as f:
+            json.dump(dict(args), f, indent=2)
+        options = args
+    else:
+        if os.path.exists(config_file_path):
+            with open(config_file_path) as f:
+                options = json.load(f)
+                options.update(args)
+        else:
+            options = args
+
+    return hosts, options, config_folder
 
 
 def get_new_machines(new_machines_queue):

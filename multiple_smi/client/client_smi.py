@@ -6,7 +6,8 @@ from .notifier_util import init_notifier
 import zmq
 import time
 from threading import Thread
-from queue import Queue, Empty
+from queue import Queue
+import os
 
 parser = argparse.ArgumentParser(description='Client for for Multiple smi',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -21,8 +22,9 @@ parser.add_argument('--hosts-list-path', '-j', default=None, help='path to json 
 parser.add_argument('--notif-backend', default=None, choices=['gnome', 'ntfy'], help='which beckend to choose for notifications')
 parser.add_argument('--frontend', default='default', choices=['default', 'appindicator', 'argos'],
                     help='frontend to use to render the menu. argos compatible with bitbar')
-parser.add_argument('--argos-folder', default=None, help='config folder of argos or Bitbar')
+parser.add_argument('--argos-folder', default=os.path.join(os.path.expanduser('~'), ".config", "argos"), help='config folder of argos or Bitbar')
 parser.add_argument('--min-mem-notif', '-n', default=1, type=float, help='min memory usage to trigger Notification (in GB)')
+parser.add_argument('--save-options', action='store_true')
 
 
 def smi(args, hosts, frontend):
@@ -126,11 +128,18 @@ def notify_lost_machine(args, machine_name, machine):
     return
 
 
+def get_non_default(args_dict):
+    return {k: v for k, v in args_dict.items() if v != parser.get_default(k)}
+
+
 def main():
     args = parser.parse_args()
+    args_dict = vars(args)
+    hosts, saved_args, config_folder = get_hosts(**get_non_default(args_dict))
+    new_args = {**args_dict, **saved_args}
+    args = argparse.Namespace(**new_args)
     args.notify = init_notifier(args.notif_backend)
     args.context = zmq.Context()
-    hosts, config_folder = get_hosts()
 
     if args.frontend == "default":
         from .menu_frontend.default_frontend import BaseFrontend
