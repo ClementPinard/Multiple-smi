@@ -71,7 +71,7 @@ def install(args):
     subprocess.call(["systemctl", "enable", "server_smi.service"])
 
     print("server_smi is now installed and will run at next reboot.")
-    print("You can access its stauts with the following command (no sudo needed)")
+    print("You can access its status with the following command (no sudo needed)")
     print("")
     print("systemctl status server_smi.service")
     print("")
