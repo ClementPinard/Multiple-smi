@@ -74,7 +74,7 @@ def main():
     args = parser.parse_args()
     args.context = zmq.Context()
     args.timeout = 2
-    old_hosts, config_folder = get_hosts()
+    old_hosts, _, config_folder = get_hosts(args)
 
     old_ip_list = [v['ip'] for i, v in old_hosts.items()]
     new_hosts = sniff_port(args.port, args.ip, args.search_level)
@@ -88,7 +88,7 @@ def main():
         file_path = os.path.join(config_folder, 'hosts_to_smi.json')
         print(old_hosts)
         with open(file_path, 'w') as f:
-                json.dump(old_hosts, f, indent=2)
+            json.dump(old_hosts, f, indent=2)
 
 
 if __name__ == "__main__":
