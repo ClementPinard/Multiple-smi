@@ -1,0 +1,40 @@
+[tool.poetry]
+name = "multiple-smi"
+version = "2.1.0"
+description = "Look up GPU/CPU/RAM usage on multiple servers at the same time"
+authors = ["Clément Pinard <mail@clementpinard.fr>"]
+license = "MIT"
+readme = "README.md"
+classifiers=[
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Intended Audience :: Science/Research",
+]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "^1.26.2"
+nvidia-ml-py3 = "^7.352.0"
+colorspacious = "^1.1.2"
+py-cpuinfo = "^9.0.0"
+python-nmap = "^0.7.1"
+pycairo = "^1.25.1"
+pyzmq = "^25.1.2"
+psutil = "^5.9.6"
+pygobject = "^3.46.0"
+
+[tool.poetry.scripts]
+client_smi = "multiple_smi.client.client_smi:main"
+discover_hosts = "multiple_smi.client.update_hosts_list:main"
+server_smi = "multiple_smi.server.server_smi:main"
+install_server_service = "multiple_smi.server.install_server_service:main"
+
+[tool.poetry.extras]
+client = ["colorspacious", "python-nmap", "pycairo", "pygobject"]
+server = ["psutil", "nvidia-ml-py3", "psutil", "py-cpuinfo"]
+
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

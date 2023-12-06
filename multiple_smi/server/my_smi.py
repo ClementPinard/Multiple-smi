@@ -27,222 +27,238 @@
 #####
 
 
-from pynvml import *
 import datetime
-from cpuinfo import get_cpu_info
+import multiprocessing
+
 import psutil
+import pynvml
+from cpuinfo import get_cpu_info
 
 cpu_info = get_cpu_info()
 try:
-    CPU_NAME = cpu_info['brand']
+    CPU_NAME = cpu_info["brand"]
 except KeyError:
-    CPU_NAME = cpu_info['brand_raw']
+    CPU_NAME = cpu_info["brand_raw"]
+
+CPU_COUNT = multiprocessing.cpu_count()
+CPU_NAME = f"{CPU_NAME} ({CPU_COUNT} cores)"
 
 
 def handleError(err):
     #
     # Converts errors into string messages
     #
-    if (err.value == NVML_ERROR_NOT_SUPPORTED):
+    if err.value == pynvml.NVML_ERROR_NOT_SUPPORTED:
         return "N/A"
     else:
         return err.__str__()
+
 
 #######
 
 
 def DeviceQuery():
-    result = {'timestap': str(datetime.date.today()),
-              'attached_gpus': []}
+    result = {"timestap": str(datetime.date.today()), "attached_gpus": []}
     try:
         #
         # Initialize NVML
         #
-        nvmlInit()
+        pynvml.nvmlInit()
 
-        result['driver_version'] = nvmlSystemGetDriverVersion().decode('utf-8')
+        result["driver_version"] = pynvml.nvmlSystemGetDriverVersion().decode("utf-8")
 
-        deviceCount = nvmlDeviceGetCount()
+        deviceCount = pynvml.nvmlDeviceGetCount()
 
         for i in range(0, deviceCount):
-            handle = nvmlDeviceGetHandleByIndex(i)
+            handle = pynvml.nvmlDeviceGetHandleByIndex(i)
 
-            pciInfo = nvmlDeviceGetPciInfo(handle)
+            pciInfo = pynvml.nvmlDeviceGetPciInfo(handle)
             tempres = {}
-            result['attached_gpus'].append(tempres)
-            tempres['id'] = i
-            tempres['PCI bus id'] = pciInfo.busId.decode('utf-8')
+            result["attached_gpus"].append(tempres)
+            tempres["id"] = i
+            tempres["PCI bus id"] = pciInfo.busId.decode("utf-8")
 
-            tempres['product_name'] = nvmlDeviceGetName(handle).decode('utf-8')
+            tempres["product_name"] = pynvml.nvmlDeviceGetName(handle).decode("utf-8")
 
             try:
-                uuid = nvmlDeviceGetUUID(handle)
-            except NVMLError as err:
+                uuid = pynvml.nvmlDeviceGetUUID(handle)
+            except pynvml.NVMLError as err:
                 uuid = handleError(err)
 
-            tempres['uuid'] = uuid.decode('utf-8')
+            tempres["uuid"] = uuid.decode("utf-8")
 
             try:
-                vbios = nvmlDeviceGetVbiosVersion(handle).decode('utf-8')
-            except NVMLError as err:
+                vbios = pynvml.nvmlDeviceGetVbiosVersion(handle).decode("utf-8")
+            except pynvml.NVMLError as err:
                 vbios = handleError(err)
 
-            tempres['vbios_version'] = vbios
+            tempres["vbios_version"] = vbios
 
             pci = {}
-            tempres['pci'] = pci
-            pci['bus'] = pciInfo.bus
-            pci['device'] = pciInfo.device
-            pci['domain'] = pciInfo.domain
-            pci['device_id'] = pciInfo.pciDeviceId
-            pci['bus_id'] = pciInfo.busId.decode('utf-8')
-            pci['sub_system_id'] = pciInfo.pciSubSystemId
+            tempres["pci"] = pci
+            pci["bus"] = pciInfo.bus
+            pci["device"] = pciInfo.device
+            pci["domain"] = pciInfo.domain
+            pci["device_id"] = pciInfo.pciDeviceId
+            pci["bus_id"] = pciInfo.busId.decode("utf-8")
+            pci["sub_system_id"] = pciInfo.pciSubSystemId
 
             linkInfo = {}
-            pci['link_info'] = linkInfo
+            pci["link_info"] = linkInfo
 
             try:
-                gen = nvmlDeviceGetMaxPcieLinkGeneration(handle)
-            except NVMLError as err:
+                gen = pynvml.nvmlDeviceGetMaxPcieLinkGeneration(handle)
+            except pynvml.NVMLError as err:
                 gen = handleError(err)
 
-            linkInfo['max_link_gen'] = gen
+            linkInfo["max_link_gen"] = gen
 
             try:
-                gen = nvmlDeviceGetCurrPcieLinkGeneration(handle)
-            except NVMLError as err:
+                gen = pynvml.nvmlDeviceGetCurrPcieLinkGeneration(handle)
+            except pynvml.NVMLError as err:
                 gen = handleError(err)
 
-            linkInfo['current_link_gen'] = gen
+            linkInfo["current_link_gen"] = gen
 
             try:
-                width = nvmlDeviceGetMaxPcieLinkWidth(handle)
-            except NVMLError as err:
+                width = pynvml.nvmlDeviceGetMaxPcieLinkWidth(handle)
+            except pynvml.NVMLError as err:
                 width = handleError(err)
 
-            linkInfo['max_link_width'] = width
+            linkInfo["max_link_width"] = width
 
             try:
-                width = nvmlDeviceGetCurrPcieLinkWidth(handle)
-            except NVMLError as err:
+                width = pynvml.nvmlDeviceGetCurrPcieLinkWidth(handle)
+            except pynvml.NVMLError as err:
                 width = handleError(err)
 
-            linkInfo['current_link_width'] = width
+            linkInfo["current_link_width"] = width
 
             try:
-                fan = nvmlDeviceGetFanSpeed(handle)
-            except NVMLError as err:
+                fan = pynvml.nvmlDeviceGetFanSpeed(handle)
+            except pynvml.NVMLError as err:
                 fan = handleError(err)
-            tempres['fan_speed'] = fan
+            tempres["fan_speed"] = fan
 
             try:
-                perfState = nvmlDeviceGetPowerState(handle)
-                perfStateStr = 'P%s' % perfState
-            except NVMLError as err:
+                perfState = pynvml.nvmlDeviceGetPowerState(handle)
+                perfStateStr = f"P{perfState}"
+            except pynvml.NVMLError as err:
                 perfStateStr = handleError(err)
-            tempres['performance_state'] = perfStateStr
+            tempres["performance_state"] = perfStateStr
 
             try:
-                memInfo = nvmlDeviceGetMemoryInfo(handle)
+                memInfo = pynvml.nvmlDeviceGetMemoryInfo(handle)
                 mem_total = memInfo.total / 1024 / 1024
                 mem_used = memInfo.used / 1024 / 1024
                 mem_free = memInfo.total / 1024 / 1024 - memInfo.used / 1024 / 1024
-            except NVMLError as err:
+            except pynvml.NVMLError as err:
                 error = handleError(err)
                 mem_total = error
                 mem_used = error
                 mem_free = error
 
-            tempres['total_memory'] = mem_total
-            tempres['used_memory'] = mem_used
-            tempres['free_memory'] = mem_free
+            tempres["total_memory"] = mem_total
+            tempres["used_memory"] = mem_used
+            tempres["free_memory"] = mem_free
 
             try:
-                mode = nvmlDeviceGetComputeMode(handle)
-                if mode == NVML_COMPUTEMODE_DEFAULT:
-                    modeStr = 'Default'
-                elif mode == NVML_COMPUTEMODE_EXCLUSIVE_THREAD:
-                    modeStr = 'Exclusive Thread'
-                elif mode == NVML_COMPUTEMODE_PROHIBITED:
-                    modeStr = 'Prohibited'
-                elif mode == NVML_COMPUTEMODE_EXCLUSIVE_PROCESS:
-                    modeStr = 'Exclusive Process'
+                mode = pynvml.nvmlDeviceGetComputeMode(handle)
+                if mode == pynvml.NVML_COMPUTEMODE_DEFAULT:
+                    modeStr = "Default"
+                elif mode == pynvml.NVML_COMPUTEMODE_EXCLUSIVE_THREAD:
+                    modeStr = "Exclusive Thread"
+                elif mode == pynvml.NVML_COMPUTEMODE_PROHIBITED:
+                    modeStr = "Prohibited"
+                elif mode == pynvml.NVML_COMPUTEMODE_EXCLUSIVE_PROCESS:
+                    modeStr = "Exclusive Process"
                 else:
-                    modeStr = 'Unknown'
-            except NVMLError as err:
+                    modeStr = "Unknown"
+            except pynvml.NVMLError as err:
                 modeStr = handleError(err)
 
-            tempres['compute_mode'] = modeStr
+            tempres["compute_mode"] = modeStr
 
             try:
-                util = nvmlDeviceGetUtilizationRates(handle)
+                util = pynvml.nvmlDeviceGetUtilizationRates(handle)
                 gpu_util = util.gpu
                 mem_util = util.memory
-            except NVMLError as err:
+            except pynvml.NVMLError as err:
                 error = handleError(err)
                 gpu_util = error
                 mem_util = error
             utilization = {}
-            tempres['utilization'] = utilization
+            tempres["utilization"] = utilization
 
-            utilization['gpu'] = gpu_util
-            utilization['mem'] = mem_util
+            utilization["gpu"] = gpu_util
+            utilization["mem"] = mem_util
 
             try:
-                temp = nvmlDeviceGetTemperature(handle, NVML_TEMPERATURE_GPU)
-            except NVMLError as err:
+                temp = pynvml.nvmlDeviceGetTemperature(
+                    handle, pynvml.NVML_TEMPERATURE_GPU
+                )
+            except pynvml.NVMLError as err:
                 temp = handleError(err)
 
-            tempres['temperature'] = temp
+            tempres["temperature"] = temp
 
             try:
-                graphics = nvmlDeviceGetClockInfo(handle, NVML_CLOCK_GRAPHICS)
-            except NVMLError as err:
+                graphics = pynvml.nvmlDeviceGetClockInfo(
+                    handle, pynvml.NVML_CLOCK_GRAPHICS
+                )
+            except pynvml.NVMLError as err:
                 graphics = handleError(err)
-            tempres['graphics_clock'] = graphics
+            tempres["graphics_clock"] = graphics
             try:
-                sm = nvmlDeviceGetClockInfo(handle, NVML_CLOCK_SM)
-            except NVMLError as err:
+                sm = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_SM)
+            except pynvml.NVMLError as err:
                 sm = handleError(err)
 
-            tempres['sm_clock'] = sm
+            tempres["sm_clock"] = sm
             try:
-                mem = nvmlDeviceGetClockInfo(handle, NVML_CLOCK_MEM)
-            except NVMLError as err:
+                mem = pynvml.nvmlDeviceGetClockInfo(handle, pynvml.NVML_CLOCK_MEM)
+            except pynvml.NVMLError as err:
                 mem = handleError(err)
 
-            tempres['mem_clock'] = mem
+            tempres["mem_clock"] = mem
 
             try:
-                graphics = nvmlDeviceGetMaxClockInfo(handle, NVML_CLOCK_GRAPHICS)
-            except NVMLError as err:
+                graphics = pynvml.nvmlDeviceGetMaxClockInfo(
+                    handle, pynvml.NVML_CLOCK_GRAPHICS
+                )
+            except pynvml.NVMLError as err:
                 graphics = handleError(err)
 
-            tempres['graphics_max_clock'] = graphics
+            tempres["graphics_max_clock"] = graphics
 
             try:
-                sm = nvmlDeviceGetMaxClockInfo(handle, NVML_CLOCK_SM)
-            except NVMLError as err:
+                sm = pynvml.nvmlDeviceGetMaxClockInfo(handle, pynvml.NVML_CLOCK_SM)
+            except pynvml.NVMLError as err:
                 sm = handleError(err)
-            tempres['sm_max_clock'] = sm
+            tempres["sm_max_clock"] = sm
             try:
-                mem = nvmlDeviceGetMaxClockInfo(handle, NVML_CLOCK_MEM)
-            except NVMLError as err:
+                mem = pynvml.nvmlDeviceGetMaxClockInfo(handle, pynvml.NVML_CLOCK_MEM)
+            except pynvml.NVMLError as err:
                 mem = handleError(err)
 
-            tempres['mem_max_clock'] = mem
+            tempres["mem_max_clock"] = mem
             gpu_procs = {}
-            tempres['processes'] = gpu_procs
+            tempres["processes"] = gpu_procs
             try:
-                procs = nvmlDeviceGetComputeRunningProcesses(handle)
-                graphics = nvmlDeviceGetGraphicsRunningProcesses(handle)
+                procs = pynvml.nvmlDeviceGetComputeRunningProcesses(handle)
+                graphics = pynvml.nvmlDeviceGetGraphicsRunningProcesses(handle)
 
-                for p in procs+graphics:
+                for p in procs + graphics:
                     try:
-                        # discard the options used for the process to avoid a long string
-                        name = nvmlSystemGetProcessName(p.pid).decode('utf-8').split(' ')[0]
-                    except NVMLError as err:
-                        if (err.value == NVML_ERROR_NOT_FOUND):
+                        # discard the options used for the process
+                        # to avoid a long string
+                        name = (
+                            pynvml.nvmlSystemGetProcessName(p.pid)
+                            .decode("utf-8")
+                            .split(" ")[0]
+                        )
+                    except pynvml.NVMLError as err:
+                        if err.value == pynvml.NVML_ERROR_NOT_FOUND:
                             # probably went away
                             continue
                         else:
@@ -250,35 +266,37 @@ def DeviceQuery():
 
                     gpu_procs[p.pid] = {}
 
-                    gpu_procs[p.pid]['process_name'] = name
+                    gpu_procs[p.pid]["process_name"] = name
 
-                    if (p.usedGpuMemory is None):
-                        mem = 'N\\A'
+                    if p.usedGpuMemory is None:
+                        mem = "N\\A"
                     else:
-                        mem = (p.usedGpuMemory / 1024 / 1024)
-                    gpu_procs[p.pid]['used_memory'] = mem
+                        mem = p.usedGpuMemory / 1024 / 1024
+                    gpu_procs[p.pid]["used_memory"] = mem
 
-            except NVMLError as err:
+            except pynvml.NVMLError:
                 pass
 
-    except NVMLError as err:
+    except pynvml.NVMLError:
         pass
 
     try:
-        nvmlShutdown()
-    except NVMLError as err:
+        pynvml.nvmlShutdown()
+    except pynvml.NVMLError:
         pass
 
     cpu_stat = {}
-    cpu_stat['name'] = CPU_NAME
-    cpu_stat['usage'] = psutil.cpu_percent()
+    cpu_stat["name"] = CPU_NAME
+    cpu_stat["usage"] = psutil.cpu_percent()
 
     vmem = psutil.virtual_memory()
-    ram_stat = {'total': vmem.total/(1024**3),
-                'used': vmem.used/(1024**3),
-                'usage': vmem.percent}
+    ram_stat = {
+        "total": vmem.total / (1024**3),
+        "used": vmem.used / (1024**3),
+        "usage": vmem.percent,
+    }
 
-    result['cpu'] = cpu_stat
-    result['ram'] = ram_stat
+    result["cpu"] = cpu_stat
+    result["ram"] = ram_stat
 
     return result
