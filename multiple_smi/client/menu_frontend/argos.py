@@ -1,11 +1,12 @@
-from .default_frontend import BaseFrontend
-from .icon_utils import draw_icon
+import json
 import os
 import stat
-import json
 import sys
 
-argos_template = '''#!{python}
+from .default_frontend import BaseFrontend
+from .icon_utils import draw_icon
+
+argos_template = """#!{python}
 
 import re
 import time
@@ -36,28 +37,34 @@ print("RAM | color=gray")
 print("{{}}% ({{:.2f}} GB / {{:.2f}} GB)".format(info['ram']['usage'],
                                            info['ram']['used'],
                                            info['ram']['total']))
-'''
+"""
 
 
 class ArgosFrontend(BaseFrontend):
     """docstring for ArgosBackend"""
 
     def __init__(self, config_folder, argos_folder=None):
-        super(ArgosFrontend, self).__init__(config_folder)
-        self.argos_folder = argos_folder or os.path.join(os.path.expanduser('~'), ".config", "argos")
-        assert(os.path.isdir(self.argos_folder))
+        super().__init__(config_folder)
+        self.argos_folder = argos_folder or os.path.join(
+            os.path.expanduser("~"), ".config", "argos"
+        )
+        assert os.path.isdir(self.argos_folder)
 
     def build_menu(self, machine_name, machine):
-        icon_path_string = os.path.join(self.config_folder, "{}.png".format(machine_name))
-        json_path_string = os.path.join(self.config_folder, "client_{}.json".format(machine_name))
-        script_string = argos_template.format(python=sys.executable,
-                                              home=os.path.expanduser("~"),
-                                              icon_path=icon_path_string,
-                                              json_path=json_path_string,
-                                              name=machine_name,
-                                              ip=machine['ip'])
-        script_path = os.path.join(self.argos_folder, "{}.1s.py".format(machine_name))
-        with open(script_path, 'w') as f:
+        icon_path_string = os.path.join(self.config_folder, f"{machine_name}.png")
+        json_path_string = os.path.join(
+            self.config_folder, f"client_{machine_name}.json"
+        )
+        script_string = argos_template.format(
+            python=sys.executable,
+            home=os.path.expanduser("~"),
+            icon_path=icon_path_string,
+            json_path=json_path_string,
+            name=machine_name,
+            ip=machine["ip"],
+        )
+        script_path = os.path.join(self.argos_folder, f"{machine_name}.1s.py")
+        with open(script_path, "w") as f:
             f.write(script_string)
 
         st = os.stat(script_path)
@@ -66,15 +73,14 @@ class ArgosFrontend(BaseFrontend):
         self.paths[machine_name] = script_path
 
     def update_menu(self, machine_name, machine):
-        png_path = os.path.join(self.config_folder, "{}.png".format(machine_name))
+        png_path = os.path.join(self.config_folder, f"{machine_name}.png")
         draw_icon(machine).write_to_png(png_path)
-        json_path = os.path.join(self.config_folder, "client_{}.json".format(machine_name))
-        with open(json_path, 'w') as f:
-            json.dump(machine['summary'], f, indent=2)
+        json_path = os.path.join(self.config_folder, f"client_{machine_name}.json")
+        with open(json_path, "w") as f:
+            json.dump(machine["summary"], f, indent=2)
 
     def new_machines(self, machine_names, machines):
         for name in machine_names:
-
             self.update_menu(name, machines[name])
             self.build_menu(name, machines[name])
 
