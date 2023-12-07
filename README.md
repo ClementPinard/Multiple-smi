@@ -55,13 +55,15 @@ You need to install these with your package manager (e.g. `apt` for ubuntu or `b
  * `nmap`
  * `libcairo2-dev`
  * `libzmq3-dev`
+ * `python3-cairo-dev` (ubuntu)
+ * `py3cairo` (mac)
 
  ```bash
- sudo apt install nmap libcairo2-dev libzmq3-dev
+ sudo apt install nmap libcairo2-dev libzmq3-dev python3-cairo-dev
  ```
 
  ```bash
- brew install nmap libcairo2-dev libzmq3-dev
+ brew install nmap libcairo2-dev libzmq3-dev py3cairo
  ```
 
 #### Gnome
